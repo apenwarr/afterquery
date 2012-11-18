@@ -1,0 +1,19 @@
+application: afterquery
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /
+  static_files: render.html
+  upload: render.html
+- url: /help
+  static_files: help.html
+  upload: help.html
+- url: /render.js
+  static_files: render.js
+  upload: render.js
+- url: /(.*)\.json
+  static_files: \1.json
+  upload: (.*\.json)

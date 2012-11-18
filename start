@@ -1,0 +1,4 @@
+#!/bin/sh
+exec ../google_appengine/dev_appserver.py \
+	--use_sqlite \
+	-a 0.0.0.0 -p 1111 .

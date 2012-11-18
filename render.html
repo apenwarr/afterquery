@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <script>
+  google.load('visualization', '1.0', {
+    packages: ['table', 'corechart', 'treemap']
+  });
+  </script>
+  <script src="render.js"></script>
+</head>
+
+<body>
+
+<div id='vizchart'></div>
+<div id='viztable'></div>
+
+<script>
+afterquery.render(window.location.search);
+</script>
+
+</body>
+</html>
