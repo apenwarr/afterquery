@@ -481,12 +481,40 @@ function fillNullsWithZero(grid) {
 }
 
 
-function gotData(data) {
-  console.debug('gotdata:', data);
-  var headers = data.shift();
-  var types = guessTypes(data);
-  var grid = {headers: headers, data: data, types: types};
-  console.debug('grid:', grid);
+function gridFromData(gotdata) {
+  var headers, data, types;
+  if (gotdata.table) {
+    // gviz format
+    headers = [];
+    for (var headeri in gotdata.table.cols) {
+      headers.push(gotdata.table.cols[headeri].label ||
+		   gotdata.table.cols[headeri].id);
+    }
+    data = [];
+    for (var rowi in gotdata.table.rows) {
+      var row = gotdata.table.rows[rowi];
+      var orow = [];
+      for (var coli in row.c) {
+	var col = row.c[coli];
+	orow.push(col.v);
+      }
+      data.push(orow);
+    }
+  } else {
+    // assume simple [[cols...]...] (two-dimensional array) format, where
+    // the first row is the headers.
+    headers = gotdata.shift();
+    data = gotdata;
+  }
+  types = guessTypes(data);
+  return {headers: headers, data: data, types: types};
+}
+
+
+function gotData(gotdata) {
+  console.debug('gotdata:', gotdata);
+  var grid = gridFromData(gotdata);
+  console.debug('grid:',  grid);
   
   for (var argi in args.all) {
     var argkey = args.all[argi][0], argval = args.all[argi][1];
@@ -566,6 +594,7 @@ function _run(query) {
     url: url,
     dataType: 'jsonp',
     jsonpCallback: 'jsonp',
+    cache: true,
     success: function(data, status) { return wrap(gotData, data, status); },
     error: function(data, status) { return wrap(gotError, data, status); }
   });
