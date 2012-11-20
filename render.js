@@ -500,6 +500,14 @@ function gridFromData(gotdata) {
       }
       data.push(orow);
     }
+  } else if (gotdata.data && gotdata.cols) {
+    // eqldata.com format
+    headers = [];
+    for (var coli in gotdata.cols) {
+      var col = gotdata.cols[coli];
+      headers.push(col.caption);
+    }
+    data = gotdata.data;
   } else {
     // assume simple [[cols...]...] (two-dimensional array) format, where
     // the first row is the headers.
