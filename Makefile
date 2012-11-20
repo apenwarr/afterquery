@@ -3,5 +3,5 @@ default: all
 all: help.html
 
 %.html: %.md
-	markdown <$< >$@.new
+	markdown $< >$@.new
 	mv $@.new $@

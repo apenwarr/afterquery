@@ -276,16 +276,16 @@ time <a href="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=da
 src="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&pivot=date;ver;serial">
 </iframe>
 
-Trim out some outliers <a href="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial>10&filter=ver>&pivot=date;ver;serial">(link)</a>:
+Trim out some outliers <a href="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial&gt;10&filter=ver&gt;&pivot=date;ver;serial">(link)</a>:
 
 <iframe
-src="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial>10&filter=ver>&pivot=date;ver;serial">
+src="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial&gt;10&filter=ver&gt;&pivot=date;ver;serial">
 </iframe>
 
-And graph it <a href="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial>10&filter=ver>&pivot=date;ver;serial&chart=stacked">(link)</a>:
+And graph it <a href="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial&gt;10&filter=ver&gt;&pivot=date;ver;serial&chart=stacked">(link)</a>:
 
 <iframe
-src="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial>10&filter=ver>&pivot=date;ver;serial&chart=stacked">
+src="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&group=date,ver;serial&filter=serial&gt;10&filter=ver&gt;&pivot=date;ver;serial&chart=stacked">
 </iframe>
 
 Or graph a subset of the data <a href="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&q=v35,v37,v36&pivot=date;ver;serial&chart=line">(link)</a>:
@@ -294,10 +294,11 @@ Or graph a subset of the data <a href="/?url=example1.json&extract_regexp=ver=(v
 src="/?url=example1.json&extract_regexp=ver=(v)ersion-([^-.]*)&group=date,ver,serial;&order=date,ver&q=v35,v37,v36&pivot=date;ver;serial&chart=line">
 </iframe>
 
-Or maybe show the top 4 versions <a href="/?url=example1.json&group=ver,serial;&filter=ver>&order=ver&group=ver;serial&order=-serial&limit=4&chart=pie">(link)</a>
+Or maybe show the top 4 versions <a
+href="/?url=example1.json&group=ver,serial;&filter=ver&gt;&order=ver&group=ver;serial&order=-serial&limit=4&chart=pie">(link)</a>:
 
 <iframe
-src="/?url=example1.json&group=ver,serial;&filter=ver>&order=ver&group=ver;serial&order=-serial&limit=4&chart=pie">
+src="/?url=example1.json&group=ver,serial;&filter=ver&gt;&order=ver&group=ver;serial&order=-serial&limit=4&chart=pie">
 </iframe>
 
 

@@ -16,4 +16,6 @@ handlers:
   upload: render.js
 - url: /(.*)\.json
   static_files: \1.json
+  mime_type: text/plain
   upload: (.*\.json)
+  expiration: "1m"
