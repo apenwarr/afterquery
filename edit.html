@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+  <style>
+  iframe {
+    width: 95%;
+    height: 450px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2em;
+  }
+  input, textarea {
+    display: block;
+    width: 95%;
+  }
+  textarea {
+    height: 8em;
+  }
+  </style>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+  <script src="render.js"></script>
+</head>
+
+<body>
+
+<form>
+<input id='url' oninput='updateUrl()'>
+<textarea id='editor' wrap='off' oninput='updateUrl();'></textarea>
+</form>
+
+<div id='viewurl'><a href=''>foo</a></div>
+
+<iframe id='result'></iframe>
+
+<script>
+function argsToForm(args) {
+  var t = '';
+  for (var argi in args.all) {
+    var arg = args.all[argi];
+    var key = arg[0], value = arg[1];
+    if (key && key != 'url') {
+      t += key + '=' + value + '\n';
+    }
+  }
+  $('#editor').text(t);
+}
+
+
+function niceEncode(s) {
+  // we could use encodeURIComponent() here, but it's too fancy.  Let's
+  // *only* encode & characters so the resulting URL looks as nice as
+  // possible.
+  return s.replace('&', '%26');
+}
+
+
+function formToUrl() {
+  var dataurl = $('#url').attr('value');
+  var urlbase = window.location.protocol + '//' + window.location.host;
+  var out = ['url=' + niceEncode(dataurl)];
+  var parts = $('#editor').attr('value').trim().split('\n');
+  for (var parti in parts) {
+    var part = parts[parti];
+    if (part) {
+      var bits = trySplitOne(part, '=');
+      if (bits) {
+        out.push(niceEncode(bits[0]) + '=' + niceEncode(bits[1]));
+      } else {
+        out.push(niceEncode(part));
+      }
+    }
+  }
+  return urlbase + '?' + out.join('&');
+}
+
+
+function updateUrl() {
+  var url = formToUrl();
+  console.debug('url is', url);
+  $('#viewurl a').attr('href', url).text(url);
+  if (tmo) {
+    clearTimeout(tmo);
+  }
+  tmo = setTimeout(function() {
+    if (lastloaded != url) {
+      $('iframe#result').attr('src', url + '&editlink=0');
+      lastloaded = url;
+    }
+  }, 1000);
+}
+
+tmo = null;
+lastloaded = null;
+args = parseArgs(window.location.search);
+var exampleurl = (window.location.protocol + '//' + window.location.host +
+                  '/example1.json');
+$('#url').attr('value', args.get('url') || exampleurl);
+argsToForm(args);
+updateUrl();
+</script>
+
+</body>
+</html>

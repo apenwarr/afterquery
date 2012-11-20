@@ -8,6 +8,9 @@ handlers:
 - url: /
   static_files: render.html
   upload: render.html
+- url: /edit
+  static_files: edit.html
+  upload: edit.html
 - url: /help
   static_files: help.html
   upload: help.html

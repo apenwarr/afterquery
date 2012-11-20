@@ -377,7 +377,7 @@ function queryBy(ingrid, words) {
     for (var wordi in words) {
       for (var coli in row) {
 	var cell = row[coli];
-	if (cell.indexOf(words[wordi]) >= 0) {
+	if (cell.indexOf && cell.indexOf(words[wordi]) >= 0) {
 	  found = 1;
 	  break;
 	}
@@ -491,12 +491,24 @@ function gridFromData(gotdata) {
 		   gotdata.table.cols[headeri].id);
     }
     data = [];
+    var re = /^Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)$/;
     for (var rowi in gotdata.table.rows) {
       var row = gotdata.table.rows[rowi];
       var orow = [];
       for (var coli in row.c) {
 	var col = row.c[coli];
-	orow.push(col.v);
+	var g;
+	if (!col) {
+	  orow.push(null);
+	} else if ((g = re.exec(col.v))) {
+	  //TODO(apenwarr): deal with date vs. time columns properly throughout
+	  var d = new Date(g[1],g[2],g[3],g[4],g[5],g[6]);
+	  orow.push((d.getYear() + 1900) + '-' +
+		    (d.getMonth() + 1) + '-' +
+		    d.getDate());
+	} else {
+	  orow.push(col.v);
+	}
       }
       data.push(orow);
     }
@@ -549,7 +561,7 @@ function gotData(gotdata) {
     grid = fillNullsWithZero(grid);
     var datatable = dataToGvizTable(grid);
     var el = document.getElementById('vizchart');
-    var options = {height:400};
+    var options = { height: 400 };
     if (args.get('title')) {
       options.title = args.get('title');
     }
@@ -564,6 +576,8 @@ function gotData(gotdata) {
       t = new google.visualization.BarChart(el);
     } else if (chartops == 'pie') {
       t = new google.visualization.PieChart(el);
+    } else if (chartops == 'candle' || chartops == 'candlestick') {
+      t = new google.visualization.CandlestickChart(el);
     } else {
       // default to a line chart if unrecognized type
       t = new google.visualization.LineChart(el);
@@ -606,6 +620,10 @@ function _run(query) {
     success: function(data, status) { return wrap(gotData, data, status); },
     error: function(data, status) { return wrap(gotError, data, status); }
   });
+  var editlink = args.get('editlink');
+  if (editlink == 0) {
+    $('#editmenu').hide();
+  }
 }
 
 
