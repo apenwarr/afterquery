@@ -32,7 +32,14 @@ function dataToGvizTable(grid) {
   for (var rowi in data) {
     var row = [];
     for (var coli in data[rowi]) {
-      row.push({v:data[rowi][coli]});
+      var col = { v: data[rowi][coli] };
+      if (col.v && col.v.split) {
+	var lastseg = col.v.split('\0').pop();
+	if (lastseg != col.v) {
+	  col.f = lastseg;
+	}
+      }
+      row.push(col);
     }
     ddata.push({c: row});
   }
@@ -260,6 +267,63 @@ function pivotBy(ingrid, rowkeys, colkeys, valkeys) {
 }
 
 
+function stringifiedCols(row, types) {
+  var out = []
+  for (var coli in types) {
+    if (types[coli] === T_DATE) {
+      out.push(row[coli].strftime('%Y-%m-%d'));
+    } else if (types[coli] === T_DATETIME) {
+      out.push(row[coli].strftime('%Y-%m-%d %H:%M:%S'));
+    } else {
+      out.push((row[coli] + '') || '(none)');
+    }
+  }
+  return out;
+}
+
+
+KEY_ALL = ['ALL'];
+function treeify(ingrid, nkeys) {
+  var outgrid = {
+      headers: ['_id', '_parent'].concat(ingrid.headers.slice(nkeys)),
+      types: [T_STRING, T_STRING].concat(ingrid.types.slice(nkeys)),
+      data: []
+  };
+
+  var seen = {};
+  var missing = {};
+  
+  var add = function(key, values) {
+    var pkey = key.slice(0, key.length - 1);
+    if (!pkey.length && key != KEY_ALL) pkey = KEY_ALL;
+    outgrid.data.push([key.join('\0'), pkey.join('\0')].concat(values));
+    if (pkey.length && !(pkey in seen)) {
+      missing[pkey] = pkey;
+    }
+    if (key in missing) {
+      delete missing[key];
+    }
+    seen[key] = 1;
+  }
+  
+  for (var rowi in ingrid.data) {
+    var row = ingrid.data[rowi];
+    var key = row.slice(0, nkeys);
+    add(stringifiedCols(row.slice(0, nkeys),
+			ingrid.types.slice(0, nkeys)),
+	row.slice(nkeys));
+  }
+  for (var i = 0; i < 100; i++) {
+    for (var missi in missing) {
+      var miss = missing[missi];
+      add(miss, []);
+      break;
+    }
+  }
+  return outgrid;
+}
+
+
 function splitNoEmpty(s, splitter) {
   if (!s) return [];
   return s.split(splitter);
@@ -293,6 +357,28 @@ function doGroupBy(grid, argval) {
   }
   console.debug('grouping by', keys, values);
   grid = groupBy(grid, keys, values);
+  console.debug('grid:', grid);
+  return grid;
+}
+
+
+function doTreeGroupBy(grid, argval) {
+  console.debug('treeGroupBy:', argval);
+  var parts = argval.split(';', 2);
+  var keys = splitNoEmpty(parts[0], ',');
+  var values;
+  if (parts.length >= 2) {
+    // if there's a ';' separator, the names after it are the desired
+    // value columns (and that list may be empty).
+    values = splitNoEmpty(parts[1], ',');
+  } else {
+    // if there is no ';' at all, the default is to just pull in all the
+    // remaining non-key columns as values.
+    values = keysOtherThan(grid, keys);
+  }
+  console.debug('treegrouping by', keys, values);
+  grid = groupBy(grid, keys, values);
+  grid = treeify(grid, keys.length);
   console.debug('grid:', grid);
   return grid;
 }
@@ -565,6 +651,8 @@ function gotData(gotdata) {
     var argkey = args.all[argi][0], argval = args.all[argi][1];
     if (argkey == 'group') {
       grid = doGroupBy(grid, argval);
+    } else if (argkey == 'treegroup') {
+      grid = doTreeGroupBy(grid, argval);
     } else if (argkey == 'pivot') {
       grid = doPivotBy(grid, argval);
     } else if (argkey == 'filter') {
@@ -598,8 +686,15 @@ function gotData(gotdata) {
       t = new google.visualization.ColumnChart(el);
     } else if (chartops == 'bar') {
       t = new google.visualization.BarChart(el);
+    } else if (chartops == 'line') {
+      t = new google.visualization.LineChart(el);
     } else if (chartops == 'pie') {
       t = new google.visualization.PieChart(el);
+    } else if (chartops == 'tree') {
+      options.maxDepth = 3;
+      options.maxPostDepth = 1;
+      options.showScale = 1;
+      t = new google.visualization.TreeMap(el);
     } else if (chartops == 'candle' || chartops == 'candlestick') {
       t = new google.visualization.CandlestickChart(el);
     } else if (chartops == 'timeline') {
@@ -611,8 +706,7 @@ function gotData(gotdata) {
 	options.errorBars = true;
       }
     } else {
-      // default to a line chart if unrecognized type
-      t = new google.visualization.LineChart(el);
+      throw new Error('unknown chart type "' + chartops + '"');
     }
   } else {
     var el = document.getElementById('viztable');
