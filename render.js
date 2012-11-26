@@ -572,20 +572,18 @@ function gotData(gotdata) {
     }
   }
   var chartops = args.get('chart');
+  var t;
   if (chartops) {
     grid = fillNullsWithZero(grid);
-    var datatable = dataToGvizTable(grid);
     var el = document.getElementById('vizchart');
     $(el).height(window.innerHeight).width(window.innerWidth);
     var options = {};
     if (args.get('title')) {
       options.title = args.get('title');
     }
-    var t;
     if (chartops == 'stackedarea' || chartops == 'stacked') {
       t = new google.visualization.AreaChart(el);
       options.isStacked = true;
-      t.draw(datatable, options);
     } else if (chartops == 'column') {
       t = new google.visualization.ColumnChart(el);
     } else if (chartops == 'bar') {
@@ -596,17 +594,22 @@ function gotData(gotdata) {
       t = new google.visualization.CandlestickChart(el);
     } else if (chartops == 'timeline') {
       t = new google.visualization.AnnotatedTimeLine(el);
+    } else if (chartops == 'dygraph' || chartops == 'dygraph+errors') {
+      t = new Dygraph.GVizChart(el);
+      options.showRoller = true;
+      if (chartops == 'dygraph+errors') {
+	options.errorBars = true;
+      }
     } else {
       // default to a line chart if unrecognized type
       t = new google.visualization.LineChart(el);
     }
-    t.draw(datatable, options);
   } else {
-    var datatable = dataToGvizTable(grid);
     var el = document.getElementById('viztable');
-    var t = new google.visualization.Table(el);
-    t.draw(datatable, {});
+    t = new google.visualization.Table(el);
   }
+  var datatable = dataToGvizTable(grid);
+  t.draw(datatable, options);
 }
 
 

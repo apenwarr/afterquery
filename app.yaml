@@ -14,10 +14,10 @@ handlers:
 - url: /help
   static_files: help.html
   upload: help.html
-- url: /render.js
-  static_files: render.js
-  upload: render.js
-- url: /(.*)\.json
+- url: /([^/]*).js
+  static_files: \1.js
+  upload: (.*).js
+- url: /([^/]*)\.json
   static_files: \1.json
   mime_type: text/plain
   upload: (.*\.json)
