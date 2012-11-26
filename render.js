@@ -43,13 +43,11 @@ function dataToGvizTable(grid) {
 }
 
 
-IMP_FLOAT = 1;
-IMP_INT = 2;
-IMP_DATE = 4;
-IMP_BOOL = 8;
+CANT_NUM = 1;
+CANT_DATE = 2;
+CANT_BOOL = 4;
 
-T_FLOAT = 'number';
-T_INT = 'number';
+T_NUM = 'number';
 T_DATE = 'date';
 T_BOOL = 'boolean';
 T_STRING = 'string';
@@ -61,34 +59,56 @@ function guessTypes(data) {
     var row = data[rowi];
     for (var coli in row) {
       impossible[coli] += 0;
-      impossible[coli] |= IMP_DATE; // fixme
+      //impossible[coli] |= CANT_DATE; // fixme
       var cell = row[coli];
-      if (isNaN(Date.parse(cell))) impossible[coli] |= IMP_DATE;
+      if (isNaN(Date.parse(cell))) impossible[coli] |= CANT_DATE;
       var f = cell * 1;
-      if (isNaN(f)) impossible[coli] |= IMP_FLOAT;
-      if (f != parseInt(f)) impossible[coli] |= IMP_INT;
+      if (isNaN(f)) impossible[coli] |= CANT_NUM;
       if (!(cell == 0 || cell == 1 ||
 	    cell == 'true' || cell == 'false' ||
 	    cell == true || cell == false ||
-	    cell == 'True' || cell == 'False')) impossible[coli] |= IMP_BOOL;
+	    cell == 'True' || cell == 'False')) impossible[coli] |= CANT_BOOL;
     }
   }
   var types = [];
   for (var coli in impossible) {
     var imp = impossible[coli];
-    if (!(imp & IMP_BOOL)) {
+    if (!(imp & CANT_BOOL)) {
       types[coli] = T_BOOL;
-    } else if (!(imp & IMP_INT)) {
-      types[coli] = T_INT;
-    } else if (!(imp & IMP_FLOAT)) {
-      types[coli] = T_FLOAT;
-    } else if (!(imp & IMP_DATE)) {
+    } else if (!(imp & CANT_NUM)) {
+      types[coli] = T_NUM;
+    } else if (!(imp & CANT_DATE)) {
       types[coli] = T_DATE;
     } else {
       types[coli] = T_STRING;
     }
   }
   return types;
+}
+
+
+DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?$');
+DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+))?)?\\)$');
+function myParseDate(s) {
+  var g = DATE_RE1.exec(s);
+  if (!g) g = DATE_RE2.exec(s);
+  if (g) {
+    return new Date(g[1], g[2]-1, g[3],
+		    g[4] || 0, g[5] || 0, g[6] || 0);
+  }
+  return NaN;
+}
+
+
+function parseDates(data, types) {
+  for (var coli in types) {
+    var type = types[coli];
+    if (type === T_DATE || type == T_DATE) {
+      for (var rowi in data) {
+	data[rowi][coli] = myParseDate(data[rowi][coli]);
+      }
+    }
+  }
 }
 
 
@@ -148,7 +168,7 @@ function groupBy(ingrid, keys, values) {
       var colnum = keyToColNum(ingrid, values[valuei]);
       valuecols.push(colnum);
       outgrid.headers.push(ingrid.headers[colnum]);
-      outgrid.types.push(T_FLOAT);
+      outgrid.types.push(T_NUM);
     }
   };
   
@@ -159,7 +179,7 @@ function groupBy(ingrid, keys, values) {
       var incoli = valuecols[valuei];
       var outcoli = key.length + parseInt(valuei);
       var cell = row[incoli];
-      if (ingrid.types[incoli] === T_INT || ingrid.types[incoli] === T_FLOAT) {
+      if (ingrid.types[incoli] === T_NUM) {
 	orow[outcoli] += parseFloat(cell);
       } else {
 	orow[outcoli] += 1;
@@ -304,8 +324,10 @@ function filterBy(ingrid, key, op, values) {
   var keycol = keyToColNum(ingrid, key);
   var wantvals = [];
   for (var valuei in values) {
-    if (ingrid.types[keycol] === T_INT || ingrid.types[keycol] === T_FLOAT) {
+    if (ingrid.types[keycol] === T_NUM) {
       wantvals.push(parseFloat(values[valuei]));
+    } else if (ingrid.types[keycol] === T_DATE) {
+      wantvals.push(myParseDate(values[valuei]));
     } else {
       wantvals.push(values[valuei]);
     }
@@ -416,7 +438,7 @@ function orderBy(grid, keys) {
     for (var keyi in keycols) {
       var keycol = keycols[keyi][0], invert = keycols[keyi][1];
       var av = a[keycol], bv = b[keycol];
-      if (grid.types[keycol] === T_INT || grid.types[keycol] === T_FLOAT) {
+      if (grid.types[keycol] === T_NUM) {
 	av = parseFloat(av);
 	bv = parseFloat(bv);
       }
@@ -471,8 +493,7 @@ function fillNullsWithZero(grid) {
   for (var rowi in grid.data) {
     row = grid.data[rowi];
     for (var coli in row) {
-      if ((grid.types[coli] === T_INT || grid.types[coli] === T_FLOAT) &&
-	  row[coli] == undefined) {
+      if (grid.types[coli] === T_NUM && row[coli] == undefined) {
 	row[coli] = 0;
       }
     }
@@ -491,7 +512,6 @@ function gridFromData(gotdata) {
 		   gotdata.table.cols[headeri].id);
     }
     data = [];
-    var re = /^Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)$/;
     for (var rowi in gotdata.table.rows) {
       var row = gotdata.table.rows[rowi];
       var orow = [];
@@ -500,12 +520,6 @@ function gridFromData(gotdata) {
 	var g;
 	if (!col) {
 	  orow.push(null);
-	} else if ((g = re.exec(col.v))) {
-	  //TODO(apenwarr): deal with date vs. time columns properly throughout
-	  var d = new Date(g[1],g[2],g[3],g[4],g[5],g[6]);
-	  orow.push((d.getYear() + 1900) + '-' +
-		    (d.getMonth() + 1) + '-' +
-		    d.getDate());
 	} else {
 	  orow.push(col.v);
 	}
@@ -527,6 +541,7 @@ function gridFromData(gotdata) {
     data = gotdata;
   }
   types = guessTypes(data);
+  parseDates(data, types);
   return {headers: headers, data: data, types: types};
 }
 
@@ -561,7 +576,8 @@ function gotData(gotdata) {
     grid = fillNullsWithZero(grid);
     var datatable = dataToGvizTable(grid);
     var el = document.getElementById('vizchart');
-    var options = { height: 400 };
+    $(el).height(window.innerHeight).width(window.innerWidth);
+    var options = {};
     if (args.get('title')) {
       options.title = args.get('title');
     }
@@ -578,6 +594,8 @@ function gotData(gotdata) {
       t = new google.visualization.PieChart(el);
     } else if (chartops == 'candle' || chartops == 'candlestick') {
       t = new google.visualization.CandlestickChart(el);
+    } else if (chartops == 'timeline') {
+      t = new google.visualization.AnnotatedTimeLine(el);
     } else {
       // default to a line chart if unrecognized type
       t = new google.visualization.LineChart(el);
