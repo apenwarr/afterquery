@@ -18,7 +18,8 @@ function parseArgs(query) {
 }
 
 
-function dataToGvizTable(grid) {
+function dataToGvizTable(grid, options) {
+  if (!options) options = {};
   var headers = grid.headers, data = grid.data, types = grid.types;
   var dheaders = [];
   for (var i in headers) {
@@ -33,8 +34,8 @@ function dataToGvizTable(grid) {
     var row = [];
     for (var coli in data[rowi]) {
       var col = { v: data[rowi][coli] };
-      if (col.v && col.v.split) {
-	var lastseg = col.v.split('\0').pop();
+      if (options.show_only_lastseg && col.v && col.v.split) {
+	var lastseg = col.v.split('|').pop();
 	if (lastseg != col.v) {
 	  col.f = lastseg;
 	}
@@ -128,8 +129,15 @@ function parseDates(data, types) {
 }
 
 
+FUNC_RE = /^(\w+)\((.*)\)$/;
 function keyToColNum(grid, key) {
   var keycol = grid.headers.indexOf(key);
+  if (keycol < 0) {
+    var g = FUNC_RE.exec(key);
+    if (g) {
+      keycol = grid.headers.indexOf(g[2]);
+    }
+  }
   if (keycol < 0) {
     throw new Error('unknown column name "' + key + '"');
   }
@@ -176,35 +184,107 @@ function _groupByLoop(ingrid, keys, initval, addcols_func, putvalues_func) {
 }
 
 
+var agg_types = {
+  count: T_NUM,
+  sum: T_NUM
+};
+
+
+var agg_funcs = {
+  first: function(l) {
+    return l[0];
+  },
+
+  last: function(l) {
+    return l.slice(l.length-1)[0];
+  },
+  
+  only: function(l) {
+    if (l.length == 1) {
+      return l[0];
+    } else if (l.length < 1) {
+      return null;
+    } else {
+      throw new Error('cell has more than one value: only(' + l + ')')
+    }
+  },
+  
+  cat: function(l) {
+    return l.join(' ');
+  },
+  
+  count: function(l) {
+    return l.length;
+  },
+
+  sum: function(l) {
+    var acc = 0;
+    for (var i in l) {
+      acc += parseFloat(l[i]);
+    }
+    return acc;
+  }
+};
+agg_funcs.count.return_type = T_NUM;
+agg_funcs.sum.return_type = T_NUM;
+
+
 function groupBy(ingrid, keys, values) {
   // add one value column for every column listed in values.
   var valuecols = [];
+  var valuefuncs = [];
   var addcols_func = function(outgrid) {
     for (var valuei in values) {
-      var colnum = keyToColNum(ingrid, values[valuei]);
+      var g = FUNC_RE.exec(values[valuei]);
+      var field, func;
+      if (g) {
+	func = agg_funcs[g[1]];
+	field = g[2];
+      } else {
+	func = null;
+	field = values[valuei];
+      }
+      console.debug('v', values[valuei], func, field);
+      var colnum = keyToColNum(ingrid, field);
+      if (!func) {
+	if (ingrid.types[colnum] === T_NUM) {
+	  func = agg_funcs.sum;
+	} else {
+	  func = agg_funcs.count;
+	}
+      }
       valuecols.push(colnum);
+      valuefuncs.push(func);
       outgrid.headers.push(ingrid.headers[colnum]);
-      outgrid.types.push(T_NUM);
+      outgrid.types.push(func.return_type || ingrid.types[colnum]);
     }
   };
   
-  // we do a count(*) operation for non-numeric value columns, and
-  // sum(*) otherwise.
+  // by default, we do a count(*) operation for non-numeric value
+  // columns, and sum(*) otherwise.
   var putvalues_func = function(outgrid, key, orow, row) {
     for (var valuei in values) {
       var incoli = valuecols[valuei];
       var outcoli = key.length + parseInt(valuei);
       var cell = row[incoli];
-      if (ingrid.types[incoli] === T_NUM) {
-	orow[outcoli] += parseFloat(cell);
-      } else {
-	orow[outcoli] += 1;
-      }
+      if (!orow[outcoli]) orow[outcoli] = [];
+      orow[outcoli].push(cell);
     }
   };
 
-  return _groupByLoop(ingrid, keys, 0,
-		      addcols_func, putvalues_func);
+  outgrid = _groupByLoop(ingrid, keys, 0,
+			 addcols_func, putvalues_func);
+  
+  for (var rowi in outgrid.data) {
+    var row = outgrid.data[rowi];
+    for (var valuei in values) {
+      var outcoli = keys.length + parseInt(valuei);
+      var func = valuefuncs[valuei];
+      row[outcoli] = func(row[outcoli]);
+    }
+  }
+  
+  return outgrid;
 }
 
 
@@ -296,7 +376,7 @@ function treeify(ingrid, nkeys) {
   var add = function(key, values) {
     var pkey = key.slice(0, key.length - 1);
     if (!pkey.length && key != KEY_ALL) pkey = KEY_ALL;
-    outgrid.data.push([key.join('\0'), pkey.join('\0')].concat(values));
+    outgrid.data.push([key.join('|'), pkey.join('|')].concat(values));
     if (pkey.length && !(pkey in seen)) {
       missing[pkey] = pkey;
     }
@@ -313,10 +393,12 @@ function treeify(ingrid, nkeys) {
 			ingrid.types.slice(0, nkeys)),
 	row.slice(nkeys));
   }
-  for (var i = 0; i < 100; i++) {
+  var done = 0;
+  for (var i = 0; i < ingrid.data.length * nkeys && !done; i++) {
     for (var missi in missing) {
       var miss = missing[missi];
       add(miss, []);
+      done = 0;
       break;
     }
   }
@@ -670,7 +752,7 @@ function gotData(gotdata) {
     }
   }
   var chartops = args.get('chart');
-  var t;
+  var t, datatable;
   if (chartops) {
     grid = fillNullsWithZero(grid);
     var el = document.getElementById('vizchart');
@@ -708,11 +790,12 @@ function gotData(gotdata) {
     } else {
       throw new Error('unknown chart type "' + chartops + '"');
     }
+    datatable = dataToGvizTable(grid, { show_only_lastseg: true });
   } else {
     var el = document.getElementById('viztable');
     t = new google.visualization.Table(el);
+    datatable = dataToGvizTable(grid);
   }
-  var datatable = dataToGvizTable(grid);
   t.draw(datatable, options);
 }
 
