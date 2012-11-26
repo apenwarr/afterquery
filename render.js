@@ -44,11 +44,13 @@ function dataToGvizTable(grid) {
 
 
 CANT_NUM = 1;
-CANT_DATE = 2;
-CANT_BOOL = 4;
+CANT_BOOL = 2;
+CANT_DATE = 4;
+CANT_DATETIME = 8;
 
 T_NUM = 'number';
 T_DATE = 'date';
+T_DATETIME = 'datetime';
 T_BOOL = 'boolean';
 T_STRING = 'string';
 
@@ -59,9 +61,13 @@ function guessTypes(data) {
     var row = data[rowi];
     for (var coli in row) {
       impossible[coli] += 0;
-      //impossible[coli] |= CANT_DATE; // fixme
       var cell = row[coli];
-      if (isNaN(Date.parse(cell))) impossible[coli] |= CANT_DATE;
+      var d = myParseDate(cell);
+      if (isNaN(d)) {
+	impossible[coli] |= CANT_DATE | CANT_DATETIME;
+      } else if (d.getHours() || d.getMinutes() || d.getSeconds()) {
+	impossible[coli] |= CANT_DATE; // has time, so isn't a pure date
+      }
       var f = cell * 1;
       if (isNaN(f)) impossible[coli] |= CANT_NUM;
       if (!(cell == 0 || cell == 1 ||
@@ -70,6 +76,7 @@ function guessTypes(data) {
 	    cell == 'True' || cell == 'False')) impossible[coli] |= CANT_BOOL;
     }
   }
+  console.debug('guessTypes impossibility list:', impossible);
   var types = [];
   for (var coli in impossible) {
     var imp = impossible[coli];
@@ -79,6 +86,8 @@ function guessTypes(data) {
       types[coli] = T_NUM;
     } else if (!(imp & CANT_DATE)) {
       types[coli] = T_DATE;
+    } else if (!(imp & CANT_DATETIME)) {
+      types[coli] = T_DATETIME;
     } else {
       types[coli] = T_STRING;
     }
@@ -103,7 +112,7 @@ function myParseDate(s) {
 function parseDates(data, types) {
   for (var coli in types) {
     var type = types[coli];
-    if (type === T_DATE || type == T_DATE) {
+    if (type === T_DATE || type === T_DATETIME) {
       for (var rowi in data) {
 	data[rowi][coli] = myParseDate(data[rowi][coli]);
       }
@@ -326,7 +335,8 @@ function filterBy(ingrid, key, op, values) {
   for (var valuei in values) {
     if (ingrid.types[keycol] === T_NUM) {
       wantvals.push(parseFloat(values[valuei]));
-    } else if (ingrid.types[keycol] === T_DATE) {
+    } else if (ingrid.types[keycol] === T_DATE ||
+	       ingrid.types[keycol] === T_DATETIME) {
       wantvals.push(myParseDate(values[valuei]));
     } else {
       wantvals.push(values[valuei]);
