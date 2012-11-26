@@ -24,7 +24,6 @@
 <body>
 
 <form>
-<input id='url' oninput='updateUrl()'>
 <textarea id='editor' wrap='off' oninput='updateUrl();'></textarea>
 </form>
 
@@ -38,7 +37,7 @@ function argsToForm(args) {
   for (var argi in args.all) {
     var arg = args.all[argi];
     var key = arg[0], value = arg[1];
-    if (key && key != 'url') {
+    if (key) {
       t += key + '=' + value + '\n';
     }
   }
@@ -55,9 +54,8 @@ function niceEncode(s) {
 
 
 function formToUrl() {
-  var dataurl = $('#url').attr('value');
   var urlbase = window.location.protocol + '//' + window.location.host;
-  var out = ['url=' + niceEncode(dataurl)];
+  var out = [];
   var parts = $('#editor').attr('value').trim().split('\n');
   for (var parti in parts) {
     var part = parts[parti];
@@ -91,10 +89,9 @@ function updateUrl() {
 
 tmo = null;
 lastloaded = null;
-args = parseArgs(window.location.search);
 var exampleurl = (window.location.protocol + '//' + window.location.host +
                   '/example1.json');
-$('#url').attr('value', args.get('url') || exampleurl);
+args = parseArgs(window.location.search || ('?url=' + exampleurl));
 argsToForm(args);
 updateUrl();
 </script>
