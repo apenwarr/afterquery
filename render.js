@@ -703,7 +703,7 @@ function doLimit(ingrid, limit) {
 
 function fillNullsWithZero(grid) {
   for (var rowi in grid.data) {
-    row = grid.data[rowi];
+    var row = grid.data[rowi];
     for (var coli in row) {
       if (grid.types[coli] === T_NUM && row[coli] == undefined) {
 	row[coli] = 0;
@@ -832,9 +832,10 @@ function gotData(args, gotdata) {
   
   enqueue('gentable', function() {
     if (chartops) {
-      //TODO(apenwarr): something needed this, but I no longer remember what.
-      //  At least line and dygraph charts are seemingly fine without it.
-      //grid = fillNullsWithZero(grid);
+      if (chartops == 'stacked' || chartops == 'stackedarea') {
+	// Some charts react badly to missing values, so fill them in.
+	grid = fillNullsWithZero(grid);
+      }
       var el = document.getElementById('vizchart');
       $(el).height(window.innerHeight)
 	  .width(trace ? window.innerWidth - 40 : window.innerWidth);
@@ -849,6 +850,23 @@ function gotData(args, gotdata) {
       } else if (chartops == 'bar') {
 	t = new google.visualization.BarChart(el);
       } else if (chartops == 'line') {
+	t = new google.visualization.LineChart(el);
+      } else if (chartops == 'spark') {
+	// sparkline chart: get rid of everything but the data series.
+	// Looks best when small.
+	options.hAxis = {};
+	options.hAxis.baselineColor = 'none';
+	options.hAxis.textPosition = 'none';
+	options.hAxis.gridlines = {};
+	options.hAxis.gridlines.color = 'none';
+	options.vAxis = {};
+	options.vAxis.baselineColor = 'none';
+	options.vAxis.textPosition = 'none';
+	options.vAxis.gridlines = {};
+	options.vAxis.gridlines.color = 'none';
+	options.theme = 'maximized';
+	options.legend = {};
+	options.legend.position = 'none';
 	t = new google.visualization.LineChart(el);
       } else if (chartops == 'pie') {
 	t = new google.visualization.PieChart(el);
@@ -939,6 +957,9 @@ function wrap(func) {
     try {
       return func.apply(null, pre_args.concat([].slice.call(arguments)));
     } catch (e) {
+      $('#vizchart').hide();
+      $('#viztable').hide();
+      $('.vizstep').show();
       err(e);
       err("<p><a href='/help'>here's the documentation</a>");
       throw e;
