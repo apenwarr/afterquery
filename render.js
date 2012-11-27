@@ -1,3 +1,5 @@
+"use strict";
+
 function parseArgs(query) {
   var kvlist = query.substr(1).split('&');
   var out = {};
@@ -51,16 +53,16 @@ function dataToGvizTable(grid, options) {
 }
 
 
-CANT_NUM = 1;
-CANT_BOOL = 2;
-CANT_DATE = 4;
-CANT_DATETIME = 8;
+var CANT_NUM = 1;
+var CANT_BOOL = 2;
+var CANT_DATE = 4;
+var CANT_DATETIME = 8;
 
-T_NUM = 'number';
-T_DATE = 'date';
-T_DATETIME = 'datetime';
-T_BOOL = 'boolean';
-T_STRING = 'string';
+var T_NUM = 'number';
+var T_DATE = 'date';
+var T_DATETIME = 'datetime';
+var T_BOOL = 'boolean';
+var T_STRING = 'string';
 
 
 function guessTypes(data) {
@@ -104,8 +106,8 @@ function guessTypes(data) {
 }
 
 
-DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
-DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+))?)?\\)$');
+var DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
+var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+))?)?\\)$');
 function myParseDate(s) {
   var g = DATE_RE1.exec(s);
   if (!g) g = DATE_RE2.exec(s);
@@ -129,7 +131,7 @@ function parseDates(data, types) {
 }
 
 
-FUNC_RE = /^(\w+)\((.*)\)$/;
+var FUNC_RE = /^(\w+)\((.*)\)$/;
 function keyToColNum(grid, key) {
   var keycol = grid.headers.indexOf(key);
   if (keycol < 0) {
@@ -272,8 +274,8 @@ function groupBy(ingrid, keys, values) {
     }
   };
 
-  outgrid = _groupByLoop(ingrid, keys, 0,
-			 addcols_func, putvalues_func);
+  var outgrid = _groupByLoop(ingrid, keys, 0,
+			     addcols_func, putvalues_func);
   
   for (var rowi in outgrid.data) {
     var row = outgrid.data[rowi];
@@ -362,7 +364,7 @@ function stringifiedCols(row, types) {
 }
 
 
-KEY_ALL = ['ALL'];
+var KEY_ALL = ['ALL'];
 function treeify(ingrid, nkeys) {
   var outgrid = {
       headers: ['_id', '_parent'].concat(ingrid.headers.slice(nkeys)),
@@ -646,7 +648,7 @@ function extractRegexp(grid, colname, regexp) {
   var colnum = keyToColNum(grid, colname);
   for (var rowi in grid.data) {
     var row = grid.data[rowi];
-    match = r.exec(row[colnum]);
+    var match = r.exec(row[colnum]);
     if (match) {
       row[colnum] = match.slice(1).join('');
     } else {
@@ -724,7 +726,7 @@ function gridFromData(gotdata) {
 }
 
 
-function gotData(gotdata) {
+function gotData(args, gotdata) {
   console.debug('gotdata:', gotdata);
   var grid = gridFromData(gotdata);
   console.debug('grid:',  grid);
@@ -802,24 +804,28 @@ function gotData(gotdata) {
 }
 
 
-function gotError(jqxhr, status) {
+function gotError(args, jqxhr, status) {
   throw new Error('error getting url "' + args.get('url') + '": ' + status)
 }
 
 
-function wrap(func, a, b, c, d) {
-  try {
-    return func(a, b, c, d);
-  } catch (e) {
-    document.write(e);
-    document.write("<p><a href='/help'>here's the documentation</a>");
-    throw e;
+function wrap(func) {
+  var pre_args = [].slice.call(arguments, 1);
+  var f = function() {
+    try {
+      return func.apply(null, pre_args.concat([].slice.call(arguments)));
+    } catch (e) {
+      document.write(e);
+      document.write("<p><a href='/help'>here's the documentation</a>");
+      throw e;
+    }
   }
+  return f;
 }
 
 
 function _run(query) {
-  args = parseArgs(query);
+  var args = parseArgs(query);
   var url = args.get('url');
   if (!url) throw new Error("Missing url= in query parameter");
   var data = $.ajax({
@@ -827,8 +833,8 @@ function _run(query) {
     dataType: 'jsonp',
     jsonpCallback: 'jsonp',
     cache: true,
-    success: function(data, status) { return wrap(gotData, data, status); },
-    error: function(data, status) { return wrap(gotError, data, status); }
+    success: wrap(gotData, args),
+    error: wrap(gotError, args)
   });
   var editlink = args.get('editlink');
   if (editlink == 0) {
@@ -838,5 +844,5 @@ function _run(query) {
 
 
 var afterquery = {
-  render: function(data) { return wrap(_run, data); }
+  render: wrap(_run)
 };
