@@ -104,13 +104,13 @@ function guessTypes(data) {
 }
 
 
-DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?$');
+DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
 DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+))?)?\\)$');
 function myParseDate(s) {
   var g = DATE_RE1.exec(s);
   if (!g) g = DATE_RE2.exec(s);
   if (g) {
-    return new Date(g[1], g[2]-1, g[3],
+    return new Date(g[1], g[2]-1, g[3] || 1,
 		    g[4] || 0, g[5] || 0, g[6] || 0);
   }
   return NaN;
