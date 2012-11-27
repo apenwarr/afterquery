@@ -9,9 +9,48 @@
     position: absolute;
     right: 0;
     z-index: 5;
+    background: #eee;
+  }
+  div#editmenu a {
+    text-decoration: none;
+    padding: 2px;
+  }
+  div#editmenu a:hover {
+    background: #aaa;
+  }
+  #vizchart {
+    overflow: hidden;
+  }
+  #vizlog {
+    white-space: pre;
+  }
+  #vizstatus {
+    position: absolute;
+    z-index: 4;
+    width: 100%;
+    text-align: center;
+    padding-top: 1em;
+  }
+  #statussub {
+    padding-left: 1em;
+    color: #aaa;
+  }
+  .vizstep {
+    margin-top: 2em;
+    display: none;
+  }
+  .vizstep .text {
+    font-family: mono;
+    font-weight: bold;
+  }
+  .vizstep .grid {
+    margin-left: 3em;
+    max-height: 10em;
+    width: 50%;
+    overflow: auto;
   }
   </style>
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
   <script src="dygraph-combined.js"></script>
   <script src="https://www.google.com/jsapi"></script>
   <script>
@@ -25,8 +64,11 @@
 <body>
 
 <div id='editmenu'><a id='editlink' href='' target='_top'>edit</a></div>
+<div id='vizstatus'><div id='statustext'></div><div id='statussub'></div></div>
+<div id='vizraw'></div>
 <div id='vizchart'></div>
 <div id='viztable'></div>
+<div id='vizlog'></div>
 
 <script>
 $('#editlink').attr('href', '/edit' + window.location.search);

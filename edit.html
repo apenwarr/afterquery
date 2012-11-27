@@ -81,7 +81,7 @@ function updateUrl() {
   }
   tmo = setTimeout(function() {
     if (lastloaded != url) {
-      $('iframe#result').attr('src', url + '&editlink=0');
+      $('iframe#result').attr('src', url + '&editlink=0&trace=1');
       lastloaded = url;
     }
   }, 1000);

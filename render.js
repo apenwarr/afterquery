@@ -1,5 +1,23 @@
 "use strict";
 
+
+function err(s) {
+  $('#vizlog').append('\n' + s);
+}
+
+
+function showstatus(s, s2) {
+  $('#statustext').html(s);
+  $('#statussub').text(s2 || '');
+  if (s || s2) {
+    console.debug('status message:', s, s2);
+    $('#vizstatus').show();
+  } else {
+    $('#vizstatus').hide();
+  }
+}
+
+
 function parseArgs(query) {
   var kvlist = query.substr(1).split('&');
   var out = {};
@@ -66,6 +84,7 @@ var T_STRING = 'string';
 
 
 function guessTypes(data) {
+  console.debug('guessTypes');
   var impossible = [];
   for (var rowi in data) {
     var row = data[rowi];
@@ -109,8 +128,7 @@ function guessTypes(data) {
 var DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
 var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+))?)?\\)$');
 function myParseDate(s) {
-  var g = DATE_RE1.exec(s);
-  if (!g) g = DATE_RE2.exec(s);
+  var g = DATE_RE1.exec(s) || DATE_RE2.exec(s);
   if (g) {
     return new Date(g[1], g[2]-1, g[3] || 1,
 		    g[4] || 0, g[5] || 0, g[6] || 0);
@@ -669,6 +687,20 @@ function doExtractRegexp(grid, argval) {
 }
 
 
+function doLimit(ingrid, limit) {
+  limit = parseInt(limit)
+  if (ingrid.data.length > limit) {
+    return {
+        headers: ingrid.headers,
+        data: ingrid.data.slice(0, limit),
+        types: ingrid.types
+    };
+  } else {
+    return ingrid;
+  }
+}
+
+
 function fillNullsWithZero(grid) {
   for (var rowi in grid.data) {
     row = grid.data[rowi];
@@ -726,86 +758,178 @@ function gridFromData(gotdata) {
 }
 
 
+var _queue = [];
+
+
+function enqueue() {
+  _queue.push([].slice.apply(arguments));
+}
+
+
+function runqueue(after_each) {
+  var step = function(i) {
+    if (i < _queue.length) {
+      var el = _queue[i]
+      var text = el[0], func = el[1], args = el.slice(2);
+      showstatus('Running step ' + (+i+1) + ' of ' + _queue.length + '...',
+		 text);
+      setTimeout(function() {
+	var start = Date.now();
+	wrap(func).apply(null, args);
+	var end = Date.now();
+	if (after_each) {
+	  after_each(i + 1, _queue.length, text, end-start);
+	}
+	step(i + 1);
+      }, 0);
+    } else {
+      showstatus('');
+    }
+  }
+  step(0);
+}
+
+
 function gotData(args, gotdata) {
-  console.debug('gotdata:', gotdata);
-  var grid = gridFromData(gotdata);
-  console.debug('grid:',  grid);
+  var grid;
+  enqueue('parse', function() {
+    console.debug('gotdata:', gotdata);
+    grid = gridFromData(gotdata);
+    console.debug('grid:',  grid);
+  });
+  
+  var argi;
+  var transform = function(f, arg) {
+    enqueue(args.all[argi][0] + '=' + args.all[argi][1], function() {
+      grid = f(grid, arg);
+    });
+  };
   
   for (var argi in args.all) {
     var argkey = args.all[argi][0], argval = args.all[argi][1];
     if (argkey == 'group') {
-      grid = doGroupBy(grid, argval);
+      transform(doGroupBy, argval);
     } else if (argkey == 'treegroup') {
-      grid = doTreeGroupBy(grid, argval);
+      transform(doTreeGroupBy, argval);
     } else if (argkey == 'pivot') {
-      grid = doPivotBy(grid, argval);
+      transform(doPivotBy, argval);
     } else if (argkey == 'filter') {
-      grid = doFilterBy(grid, argval);
+      transform(doFilterBy, argval);
     } else if (argkey == 'q') {
-      grid = doQueryBy(grid, argval);
+      transform(doQueryBy, argval);
     } else if (argkey == 'limit') {
-      if (grid.data.length > argval) {
-	grid.data.length = argval;
-      }
+      transform(doLimit, argval);
     } else if (argkey == 'order') {
-      grid = doOrderBy(grid, argval);
+      transform(doOrderBy, argval);
     } else if (argkey == 'extract_regexp') {
-      grid = doExtractRegexp(grid, argval);
+      transform(doExtractRegexp, argval);
     }
   }
-  var chartops = args.get('chart');
+  
+  var chartops = args.get('chart'), trace = args.get('trace');
   var t, datatable;
-  if (chartops) {
-    //TODO(apenwarr): something needed this, but I no longer remember what.
-    //  At least line and dygraph charts are seemingly fine without it.
-    //grid = fillNullsWithZero(grid);
-    var el = document.getElementById('vizchart');
-    $(el).height(window.innerHeight).width(window.innerWidth);
-    var options = {};
-    if (args.get('title')) {
-      options.title = args.get('title');
-    }
-    if (chartops == 'stackedarea' || chartops == 'stacked') {
-      t = new google.visualization.AreaChart(el);
-      options.isStacked = true;
-    } else if (chartops == 'column') {
-      t = new google.visualization.ColumnChart(el);
-    } else if (chartops == 'bar') {
-      t = new google.visualization.BarChart(el);
-    } else if (chartops == 'line') {
-      t = new google.visualization.LineChart(el);
-    } else if (chartops == 'pie') {
-      t = new google.visualization.PieChart(el);
-    } else if (chartops == 'tree') {
-      options.maxDepth = 3;
-      options.maxPostDepth = 1;
-      options.showScale = 1;
-      t = new google.visualization.TreeMap(el);
-    } else if (chartops == 'candle' || chartops == 'candlestick') {
-      t = new google.visualization.CandlestickChart(el);
-    } else if (chartops == 'timeline') {
-      t = new google.visualization.AnnotatedTimeLine(el);
-    } else if (chartops == 'dygraph' || chartops == 'dygraph+errors') {
-      t = new Dygraph.GVizChart(el);
-      options.showRoller = true;
-      if (chartops == 'dygraph+errors') {
-	options.errorBars = true;
+  var options = {};
+  
+  enqueue('gentable', function() {
+    if (chartops) {
+      //TODO(apenwarr): something needed this, but I no longer remember what.
+      //  At least line and dygraph charts are seemingly fine without it.
+      //grid = fillNullsWithZero(grid);
+      var el = document.getElementById('vizchart');
+      $(el).height(window.innerHeight)
+	  .width(trace ? window.innerWidth - 40 : window.innerWidth);
+      if (args.get('title')) {
+	options.title = args.get('title');
       }
+      if (chartops == 'stackedarea' || chartops == 'stacked') {
+	t = new google.visualization.AreaChart(el);
+	options.isStacked = true;
+      } else if (chartops == 'column') {
+	t = new google.visualization.ColumnChart(el);
+      } else if (chartops == 'bar') {
+	t = new google.visualization.BarChart(el);
+      } else if (chartops == 'line') {
+	t = new google.visualization.LineChart(el);
+      } else if (chartops == 'pie') {
+	t = new google.visualization.PieChart(el);
+      } else if (chartops == 'tree') {
+	options.maxDepth = 3;
+	options.maxPostDepth = 1;
+	options.showScale = 1;
+	t = new google.visualization.TreeMap(el);
+      } else if (chartops == 'candle' || chartops == 'candlestick') {
+	t = new google.visualization.CandlestickChart(el);
+      } else if (chartops == 'timeline') {
+	t = new google.visualization.AnnotatedTimeLine(el);
+      } else if (chartops == 'dygraph' || chartops == 'dygraph+errors') {
+	t = new Dygraph.GVizChart(el);
+	options.showRoller = true;
+	if (chartops == 'dygraph+errors') {
+	  options.errorBars = true;
+	}
+      } else {
+	throw new Error('unknown chart type "' + chartops + '"');
+      }
+      datatable = dataToGvizTable(grid, { show_only_lastseg: true });
     } else {
-      throw new Error('unknown chart type "' + chartops + '"');
+      var el = document.getElementById('viztable');
+      t = new google.visualization.Table(el);
+      datatable = dataToGvizTable(grid);
     }
-    datatable = dataToGvizTable(grid, { show_only_lastseg: true });
+  });
+  
+  enqueue(chartops ? 'chart=' + chartops : 'view', function() {
+    t.draw(datatable, options);
+  });
+  
+  
+  if (trace) {
+    var prevdata;
+    var after_each = function(stepi, nsteps, text, msec_time) {
+      $('#vizlog').append('<div class="vizstep" id="step' + stepi + '">' +
+			  '  <div class="text"></div>' +
+			  '  <div class="grid"></div>' +
+			  '</div>');
+      $('#step' + stepi + ' .text').text('Step ' + stepi + 
+					 ' (' + msec_time + 'ms):  ' +
+					 text);
+      var viewel = $('#step' + stepi + ' .grid');
+      if (prevdata != grid.data) {
+	var t = new google.visualization.Table(viewel[0]);
+	var datatable = dataToGvizTable({
+	  headers: grid.headers,
+	  data: grid.data.slice(0, 1000),
+	  types: grid.types
+	});
+	t.draw(datatable);
+	prevdata = grid.data;
+      } else {
+	viewel.text('(unchanged)');
+      }
+      if (stepi == nsteps) {
+	$('.vizstep').show();
+      }
+    };
+    runqueue(after_each);
   } else {
-    var el = document.getElementById('viztable');
-    t = new google.visualization.Table(el);
-    datatable = dataToGvizTable(grid);
+    runqueue();
   }
-  t.draw(datatable, options);
 }
 
 
-function gotError(args, jqxhr, status) {
-  throw new Error('error getting url "' + args.get('url') + '": ' + status)
+function gotError(url, jqxhr, status) {
+  showstatus('');
+  $('#vizraw').html('<a href="' + encodeURI(url) + '">' +
+		    encodeURI(url) +
+		    '</a>');
+  throw new Error('error getting url "' + url + '": ' +
+		  status + ': ' +
+		  'visit the data page and ensure it\'s valid jsonp.');
+}
+
+
+function gotComplete() {
+  console.debug('complete', arguments);
 }
 
 
@@ -815,8 +939,8 @@ function wrap(func) {
     try {
       return func.apply(null, pre_args.concat([].slice.call(arguments)));
     } catch (e) {
-      document.write(e);
-      document.write("<p><a href='/help'>here's the documentation</a>");
+      err(e);
+      err("<p><a href='/help'>here's the documentation</a>");
       throw e;
     }
   }
@@ -828,14 +952,17 @@ function _run(query) {
   var args = parseArgs(query);
   var url = args.get('url');
   if (!url) throw new Error("Missing url= in query parameter");
+  showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
   var data = $.ajax({
     url: url,
     dataType: 'jsonp',
     jsonpCallback: 'jsonp',
     cache: true,
     success: wrap(gotData, args),
-    error: wrap(gotError, args)
+    error: wrap(gotError, url),
+    complete: wrap(gotComplete)
   });
+  $('body').append('<script>console.debug("query done");</script>');
   var editlink = args.get('editlink');
   if (editlink == 0) {
     $('#editmenu').hide();
