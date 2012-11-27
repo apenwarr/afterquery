@@ -74,7 +74,6 @@ function formToUrl() {
 
 function updateUrl() {
   var url = formToUrl();
-  console.debug('url is', url);
   $('#viewurl a').attr('href', url).text(url);
   if (tmo) {
     clearTimeout(tmo);

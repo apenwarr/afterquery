@@ -1,6 +1,13 @@
 "use strict";
 
 
+// Mostly for konqueror compatibility
+if (!window.console) {
+  var console = {};
+  console.debug = function() {};
+}
+
+
 function err(s) {
   $('#vizlog').append('\n' + s);
 }
@@ -959,6 +966,7 @@ function wrap(func) {
     } catch (e) {
       $('#vizchart').hide();
       $('#viztable').hide();
+      $('#vizstatus').css('position', 'relative');
       $('.vizstep').show();
       err(e);
       err("<p><a href='/help'>here's the documentation</a>");
@@ -983,7 +991,6 @@ function _run(query) {
     error: wrap(gotError, url),
     complete: wrap(gotComplete)
   });
-  $('body').append('<script>console.debug("query done");</script>');
   var editlink = args.get('editlink');
   if (editlink == 0) {
     $('#editmenu').hide();
