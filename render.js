@@ -754,7 +754,9 @@ function gotData(gotdata) {
   var chartops = args.get('chart');
   var t, datatable;
   if (chartops) {
-    grid = fillNullsWithZero(grid);
+    //TODO(apenwarr): something needed this, but I no longer remember what.
+    //  At least line and dygraph charts are seemingly fine without it.
+    //grid = fillNullsWithZero(grid);
     var el = document.getElementById('vizchart');
     $(el).height(window.innerHeight).width(window.innerWidth);
     var options = {};
