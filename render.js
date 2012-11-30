@@ -240,12 +240,44 @@ var agg_funcs = {
     }
   },
   
+  min: function(l) {
+    var out = null;
+    for (var i in l) {
+      if (out == null || l[i] < out) {
+	out = l[i];
+      }
+    }
+    return out;
+  },
+  
+  max: function(l) {
+    var out = null;
+    for (var i in l) {
+      if (out == null || l[i] > out) {
+	out = l[i];
+      }
+    }
+    return out;
+  },
+  
   cat: function(l) {
     return l.join(' ');
   },
   
   count: function(l) {
     return l.length;
+  },
+  
+  count_distinct: function(l) {
+    var a = {};
+    for (var i in l) {
+      a[l[i]] = 1;
+    }
+    var acc = 0;
+    for (var i in a) {
+      acc += 1;
+    }
+    return acc;
   },
 
   sum: function(l) {
@@ -271,6 +303,9 @@ function groupBy(ingrid, keys, values) {
       var field, func;
       if (g) {
 	func = agg_funcs[g[1]];
+	if (!func) {
+	  throw new Error('unknown aggregation function "' + g[1] + '"');
+	}
 	field = g[2];
       } else {
 	func = null;
