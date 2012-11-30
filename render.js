@@ -847,8 +847,6 @@ function gotData(args, gotdata) {
 	grid = fillNullsWithZero(grid);
       }
       var el = document.getElementById('vizchart');
-      $(el).height(window.innerHeight)
-	  .width(trace ? window.innerWidth - 40 : window.innerWidth);
       if (args.get('title')) {
 	options.title = args.get('title');
       }
@@ -898,12 +896,17 @@ function gotData(args, gotdata) {
       } else {
 	throw new Error('unknown chart type "' + chartops + '"');
       }
+      $(el).height(window.innerHeight);
       datatable = dataToGvizTable(grid, { show_only_lastseg: true });
     } else {
       var el = document.getElementById('viztable');
       t = new google.visualization.Table(el);
       datatable = dataToGvizTable(grid);
     }
+
+    var wantwidth = trace ? window.innerWidth - 40 : window.innerWidth;
+    $(el).width(wantwidth);
+
     var dateformat = new google.visualization.DateFormat({
       pattern: 'yyyy-MM-dd'
     });
