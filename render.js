@@ -245,7 +245,8 @@ var agg_funcs = {
   },
 
   sum: function(l) {
-    var acc = 0;
+    var acc;
+    if (l.length) acc = 0;
     for (var i in l) {
       acc += parseFloat(l[i]);
     }
@@ -295,7 +296,9 @@ function groupBy(ingrid, keys, values) {
       var outcoli = key.length + parseInt(valuei);
       var cell = row[incoli];
       if (!orow[outcoli]) orow[outcoli] = [];
-      orow[outcoli].push(cell);
+      if (cell != null) {
+	orow[outcoli].push(cell);
+      }
     }
   };
 
