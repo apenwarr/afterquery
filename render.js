@@ -711,8 +711,9 @@ function orderBy(grid, keys) {
     }
     return 0;
   }
-  grid.data.sort(comparator);
-  return grid;
+  var outdata = grid.data.concat();
+  outdata.sort(comparator);
+  return { headers: grid.headers, data: outdata, types: grid.types };
 }
 
 
