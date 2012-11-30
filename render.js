@@ -904,6 +904,20 @@ function gotData(args, gotdata) {
       t = new google.visualization.Table(el);
       datatable = dataToGvizTable(grid);
     }
+    var dateformat = new google.visualization.DateFormat({
+      pattern: 'yyyy-MM-dd'
+    });
+    var datetimeformat = new google.visualization.DateFormat({
+      pattern: 'yyyy-MM-dd HH:mm:ss'
+    });
+    for (var coli = 0; coli < grid.types.length; coli++) {
+      console.debug('doing dateformat for', coli);
+      if (grid.types[coli] === T_DATE) {
+	dateformat.format(datatable, coli);
+      } else if (grid.types[coli] === T_DATETIME) {
+	datetimeformat.format(datatable, coli);
+      }
+    }
   });
   
   enqueue(chartops ? 'chart=' + chartops : 'view', function() {
