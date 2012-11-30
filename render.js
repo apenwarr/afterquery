@@ -156,19 +156,23 @@ function parseDates(data, types) {
 }
 
 
-var FUNC_RE = /^(\w+)\((.*)\)$/;
-function keyToColNum(grid, key) {
-  var keycol = grid.headers.indexOf(key);
-  if (keycol < 0) {
-    var g = FUNC_RE.exec(key);
-    if (g) {
-      keycol = grid.headers.indexOf(g[2]);
-    }
-  }
+function colNameToColNum(grid, colname) {
+  var keycol = colname=='*' ? 0 : grid.headers.indexOf(colname);
   if (keycol < 0) {
     throw new Error('unknown column name "' + key + '"');
   }
   return keycol;
+}
+
+
+var FUNC_RE = /^(\w+)\((.*)\)$/;
+function keyToColNum(grid, key) {
+  var g = FUNC_RE.exec(key);
+  if (g) {
+    return colNameToColNum(grid, g[2]);
+  } else {
+    return colNameToColNum(grid, key);
+  }
 }
 
 
@@ -272,8 +276,8 @@ function groupBy(ingrid, keys, values) {
 	func = null;
 	field = values[valuei];
       }
-      console.debug('v', values[valuei], func, field);
       var colnum = keyToColNum(ingrid, field);
+      console.debug('v', values[valuei], func, field);
       if (!func) {
 	if (ingrid.types[colnum] === T_NUM) {
 	  func = agg_funcs.sum;
@@ -283,7 +287,7 @@ function groupBy(ingrid, keys, values) {
       }
       valuecols.push(colnum);
       valuefuncs.push(func);
-      outgrid.headers.push(ingrid.headers[colnum]);
+      outgrid.headers.push(field=='*' ? '_count' : ingrid.headers[colnum]);
       outgrid.types.push(func.return_type || ingrid.types[colnum]);
     }
   };
@@ -444,8 +448,13 @@ function splitNoEmpty(s, splitter) {
 
 function keysOtherThan(grid, keys) {
   var out = [];
+  var keynames = [];
+  for (var keyi in keys) {
+    // this converts func(x) notation to just 'x'
+    keynames.push(grid.headers[keyToColNum(grid, keys[keyi])]);
+  }
   for (var coli in grid.headers) {
-    if (keys.indexOf(grid.headers[coli]) < 0) {
+    if (keynames.indexOf(grid.headers[coli]) < 0) {
       out.push(grid.headers[coli]);
     }
   }
@@ -461,7 +470,16 @@ function doGroupBy(grid, argval) {
   if (parts.length >= 2) {
     // if there's a ';' separator, the names after it are the desired
     // value columns (and that list may be empty).
-    values = splitNoEmpty(parts[1], ',');
+    var tmpvalues = splitNoEmpty(parts[1], ',');
+    values = [];
+    for (var tmpi in tmpvalues) {
+      var tmpval = tmpvalues[tmpi];
+      if (tmpval == '*') {
+	values = values.concat(keysOtherThan(grid, keys.concat(values)));
+      } else {
+	values.push(tmpval);
+      }
+    }
   } else {
     // if there is no ';' at all, the default is to just pull in all the
     // remaining non-key columns as values.
@@ -914,7 +932,6 @@ function gotData(args, gotdata) {
       pattern: 'yyyy-MM-dd HH:mm:ss'
     });
     for (var coli = 0; coli < grid.types.length; coli++) {
-      console.debug('doing dateformat for', coli);
       if (grid.types[coli] === T_DATE) {
 	dateformat.format(datatable, coli);
       } else if (grid.types[coli] === T_DATETIME) {
