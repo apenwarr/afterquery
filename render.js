@@ -98,6 +98,7 @@ function guessTypes(data) {
     for (var coli in row) {
       impossible[coli] += 0;
       var cell = row[coli];
+      if (cell == '' || cell == null) continue;
       var d = myParseDate(cell);
       if (isNaN(d)) {
 	impossible[coli] |= CANT_DATE | CANT_DATETIME;
@@ -118,12 +119,12 @@ function guessTypes(data) {
     var imp = impossible[coli];
     if (!(imp & CANT_BOOL)) {
       types[coli] = T_BOOL;
-    } else if (!(imp & CANT_NUM)) {
-      types[coli] = T_NUM;
     } else if (!(imp & CANT_DATE)) {
       types[coli] = T_DATE;
     } else if (!(imp & CANT_DATETIME)) {
       types[coli] = T_DATETIME;
+    } else if (!(imp & CANT_NUM)) {
+      types[coli] = T_NUM;
     } else {
       types[coli] = T_STRING;
     }
@@ -135,6 +136,8 @@ function guessTypes(data) {
 var DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
 var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+))?)?\\)$');
 function myParseDate(s) {
+  if (s == null) return s;
+  if (s && s.getDate) return s;
   var g = DATE_RE1.exec(s) || DATE_RE2.exec(s);
   if (g) {
     return new Date(g[1], g[2]-1, g[3] || 1,
@@ -420,9 +423,9 @@ function stringifiedCols(row, types) {
   var out = []
   for (var coli in types) {
     if (types[coli] === T_DATE) {
-      out.push(row[coli].strftime('%Y-%m-%d'));
+      out.push(row[coli].strftime('%Y-%m-%d') || '');
     } else if (types[coli] === T_DATETIME) {
-      out.push(row[coli].strftime('%Y-%m-%d %H:%M:%S'));
+      out.push(row[coli].strftime('%Y-%m-%d %H:%M:%S') || '');
     } else {
       out.push((row[coli] + '') || '(none)');
     }
