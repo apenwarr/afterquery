@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var afterquery = (function() {
   // Mostly for konqueror compatibility
@@ -134,14 +134,16 @@ var afterquery = (function() {
   }
 
 
-  var DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
-  var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+)(?:,(\\d+))?)?)?\\)$');
+  var DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})' +
+                        '(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
+  var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)' +
+                        '(?:,(\\d+),(\\d+)(?:,(\\d+)(?:,(\\d+))?)?)?\\)$');
   function myParseDate(s) {
     if (s == null) return s;
     if (s && s.getDate) return s;
     var g = DATE_RE1.exec(s) || DATE_RE2.exec(s);
     if (g) {
-      return new Date(g[1], g[2]-1, g[3] || 1,
+      return new Date(g[1], g[2] - 1, g[3] || 1,
                       g[4] || 0, g[5] || 0, g[6] || 0, g[7] || 0);
     }
     return NaN;
@@ -161,7 +163,7 @@ var afterquery = (function() {
 
 
   function colNameToColNum(grid, colname) {
-    var keycol = colname=='*' ? 0 : grid.headers.indexOf(colname);
+    var keycol = (colname == '*') ? 0 : grid.headers.indexOf(colname);
     if (keycol < 0) {
       throw new Error('unknown column name "' + key + '"');
     }
@@ -231,7 +233,7 @@ var afterquery = (function() {
     },
 
     last: function(l) {
-      return l.slice(l.length-1)[0];
+      return l.slice(l.length - 1)[0];
     },
 
     only: function(l) {
@@ -240,7 +242,7 @@ var afterquery = (function() {
       } else if (l.length < 1) {
         return null;
       } else {
-        throw new Error('cell has more than one value: only(' + l + ')')
+        throw new Error('cell has more than one value: only(' + l + ')');
       }
     },
 
@@ -326,7 +328,7 @@ var afterquery = (function() {
         }
         valuecols.push(colnum);
         valuefuncs.push(func);
-        outgrid.headers.push(field=='*' ? '_count' : ingrid.headers[colnum]);
+        outgrid.headers.push(field == '*' ? '_count' : ingrid.headers[colnum]);
         outgrid.types.push(func.return_type || ingrid.types[colnum]);
       }
     };
@@ -384,7 +386,8 @@ var afterquery = (function() {
             // if there's only one valkey (the common case), don't include the
             // name of the old value column in the new column names; it's
             // just clutter.
-            var name = valkeys.length>1 ? xcolkey.join(' ') : colkey.join(' ');
+            var name = valkeys.length > 1 ?
+                xcolkey.join(' ') : colkey.join(' ');
             var colnum = keyToColNum(ingrid, valkeys[coli]);
             colkey_outcols[xcolkey] = outgrid.headers.length;
             valuecols[xcolkey] = colnum;
@@ -421,7 +424,7 @@ var afterquery = (function() {
 
 
   function stringifiedCols(row, types) {
-    var out = []
+    var out = [];
     for (var coli in types) {
       if (types[coli] === T_DATE) {
         out.push(row[coli].strftime('%Y-%m-%d') || '');
@@ -457,7 +460,7 @@ var afterquery = (function() {
         delete missing[key];
       }
       seen[key] = 1;
-    }
+    };
 
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
@@ -714,7 +717,7 @@ var afterquery = (function() {
         }
       }
       return 0;
-    }
+    };
     var outdata = grid.data.concat();
     outdata.sort(comparator);
     return { headers: grid.headers, data: outdata, types: grid.types };
@@ -756,7 +759,7 @@ var afterquery = (function() {
 
 
   function doLimit(ingrid, limit) {
-    limit = parseInt(limit)
+    limit = parseInt(limit);
     if (ingrid.data.length > limit) {
       return {
           headers: ingrid.headers,
@@ -851,23 +854,23 @@ var afterquery = (function() {
   function runqueue(after_each) {
     var step = function(i) {
       if (i < _queue.length) {
-        var el = _queue[i]
+        var el = _queue[i];
         var text = el[0], func = el[1], args = el.slice(2);
-        showstatus('Running step ' + (+i+1) + ' of ' + _queue.length + '...',
+        showstatus('Running step ' + (+i + 1) + ' of ' + _queue.length + '...',
                    text);
         setTimeout(function() {
           var start = Date.now();
           wrap(func).apply(null, args);
           var end = Date.now();
           if (after_each) {
-            after_each(i + 1, _queue.length, text, end-start);
+            after_each(i + 1, _queue.length, text, end - start);
           }
           step(i + 1);
         }, 0);
       } else {
         showstatus('');
       }
-    }
+    };
     step(0);
   }
 
@@ -877,7 +880,7 @@ var afterquery = (function() {
     enqueue('parse', function() {
       console.debug('gotdata:', gotdata);
       grid = gridFromData(gotdata);
-      console.debug('grid:',  grid);
+      console.debug('grid:', grid);
     });
 
     var argi;
@@ -1057,7 +1060,7 @@ var afterquery = (function() {
         err("<p><a href='/help'>here's the documentation</a>");
         throw e;
       }
-    }
+    };
     return f;
   }
 
@@ -1090,21 +1093,23 @@ var afterquery = (function() {
 
     iframe.contentWindow.onerror = function(message, xurl, lineno) {
       error(null, message + ' url=' + xurl + ' line=' + lineno);
-    }
+    };
 
     iframe.contentWindow.loaded = function() {
       alert('loaded');
-    }
+    };
 
     iframe.contentDocument.write(
-        '<script async onerror="loaded" onload="loaded" src="' + encodeURI(url) + '"></script>');
+        '<script async onerror="loaded" onload="loaded" src="' +
+        encodeURI(url) +
+        '"></script>');
   }
 
 
   function _run(query) {
     var args = parseArgs(query);
     var url = args.get('url');
-    if (!url) throw new Error("Missing url= in query parameter");
+    if (!url) throw new Error('Missing url= in query parameter');
     showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
     getUrlData(url, wrap(gotData, args), wrap(gotError, url));
     var editlink = args.get('editlink');
@@ -1117,5 +1122,5 @@ var afterquery = (function() {
     parseArgs: parseArgs,
     trySplitOne: trySplitOne,
     render: wrap(_run)
-  }
+  };
 })();
