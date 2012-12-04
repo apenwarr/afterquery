@@ -49,7 +49,7 @@ function niceEncode(s) {
   // we could use encodeURIComponent() here, but it's too fancy.  Let's
   // *only* encode & characters so the resulting URL looks as nice as
   // possible.
-  return s.replace('&', '%26');
+  return s.replace(/&/g, '%26');
 }
 
 
