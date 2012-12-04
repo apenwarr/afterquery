@@ -783,6 +783,20 @@ function fillNullsWithZero(grid) {
 
 function gridFromData(gotdata) {
   var headers, data, types;
+
+  var err;
+  if (gotdata.errors && gotdata.errors.length) {
+    err = gotdata.errors[0];
+  } else if (gotdata.error) {
+    err = gotdata.error;
+  }
+  if (err) {
+    var msglist = [];
+    if (err.message) msglist.push(err.message);
+    if (err.detailed_message) msglist.push(err.detailed_message);
+    throw new Error('Data provider returned an error: ' + msglist.join(': '));
+  }
+
   if (gotdata.table) {
     // gviz format
     headers = [];
