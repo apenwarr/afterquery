@@ -1029,11 +1029,6 @@ function gotError(url, jqxhr, status) {
 }
 
 
-function gotComplete() {
-  console.debug('complete', arguments);
-}
-
-
 function wrap(func) {
   var pre_args = [].slice.call(arguments, 1);
   var f = function() {
@@ -1053,20 +1048,51 @@ function wrap(func) {
 }
 
 
+function getUrlData(url, success_func, error_func) {
+  // some services expect callback=, some expect jsonp=, so supply both
+  var plus = 'callback=jsonp&jsonp=jsonp';
+  var nurl;
+  if (url.indexOf('?') >= 0) {
+    nurl = url + '&' + plus;
+  } else {
+    nurl = url + '?' + plus;
+  }
+
+  var iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  document.body.insertBefore(iframe, 0);
+
+  // the default jsonp callback
+  iframe.contentWindow.jsonp = success_func;
+
+  // some services are hardcoded to use the gviz callback, so supply that too
+  iframe.contentWindow.google = {
+    visualization: {
+      Query: {
+	setResponse: success_func
+      }
+    }
+  };
+
+  iframe.contentWindow.onerror = function(message, xurl, lineno) {
+    error(null, message + ' url=' + xurl + ' line=' + lineno);
+  }
+
+  iframe.contentWindow.loaded = function() {
+    alert('loaded');
+  }
+
+  iframe.contentDocument.write(
+      '<script async onerror="loaded" onload="loaded" src="' + encodeURI(url) + '"></script>');
+}
+
+
 function _run(query) {
   var args = parseArgs(query);
   var url = args.get('url');
   if (!url) throw new Error("Missing url= in query parameter");
   showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
-  var data = $.ajax({
-    url: url,
-    dataType: 'jsonp',
-    jsonpCallback: 'jsonp',
-    cache: true,
-    success: wrap(gotData, args),
-    error: wrap(gotError, url),
-    complete: wrap(gotComplete)
-  });
+  getUrlData(url, wrap(gotData, args), wrap(gotError, url));
   var editlink = args.get('editlink');
   if (editlink == 0) {
     $('#editmenu').hide();
