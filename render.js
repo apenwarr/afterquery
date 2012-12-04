@@ -1,11 +1,25 @@
 'use strict';
 
 var afterquery = (function() {
-  // Mostly for konqueror compatibility
-  var console = window.console;
+  // To appease v8shell
+  var console;
+  try {
+    console = window.console;
+  }
+  catch (ReferenceError) {
+    console = {
+      debug: print
+    };
+  }
+
+  // For konqueror compatibility
   if (!console) {
-    console = {};
-    console.debug = function() {};
+    console = window.console;
+  }
+  if (!console) {
+    console = {
+      debug: function() {}
+    };
   }
 
 
@@ -92,12 +106,11 @@ var afterquery = (function() {
 
 
   function guessTypes(data) {
-    console.debug('guessTypes');
     var impossible = [];
     for (var rowi in data) {
       var row = data[rowi];
       for (var coli in row) {
-        impossible[coli] += 0;
+        impossible[coli] |= 0;
         var cell = row[coli];
         if (cell == '' || cell == null) continue;
         var d = myParseDate(cell);
@@ -136,12 +149,13 @@ var afterquery = (function() {
 
   var DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})' +
                         '(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
-  var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)' +
-                        '(?:,(\\d+),(\\d+)(?:,(\\d+)(?:,(\\d+))?)?)?\\)$');
+  var DATE_RE2 = /^Date\(([\d,]+)\)$/;
   function myParseDate(s) {
     if (s == null) return s;
     if (s && s.getDate) return s;
-    var g = DATE_RE1.exec(s) || DATE_RE2.exec(s);
+    var g = DATE_RE2.exec(s);
+    if (g) g = (',' + g[1]).split(',');
+    if (!g || g.length > 8) g = DATE_RE1.exec(s);
     if (g) {
       return new Date(g[1], g[2] - 1, g[3] || 1,
                       g[4] || 0, g[5] || 0, g[6] || 0, g[7] || 0);
@@ -1119,8 +1133,22 @@ var afterquery = (function() {
   }
 
   return {
-    parseArgs: parseArgs,
-    trySplitOne: trySplitOne,
+    internal: {
+      parseArgs: parseArgs,
+      trySplitOne: trySplitOne,
+      dataToGvizTable: dataToGvizTable,
+      guessTypes: guessTypes,
+      groupBy: groupBy,
+      pivotBy: pivotBy,
+      stringifiedCols: stringifiedCols,
+      treeify: treeify,
+      filterBy: filterBy,
+      queryBy: queryBy,
+      orderBy: orderBy,
+      extractRegexp: extractRegexp,
+      fillNullsWithZero: fillNullsWithZero,
+      gridFromData: gridFromData
+    },
     render: wrap(_run)
   };
 })();

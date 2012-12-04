@@ -92,6 +92,10 @@ function WVEXCEPT(etype, func) {
 
 function WVPASSEQ(a, b, precision) {
     var t = trace()[1];
+    if (a && b && a.join && b.join) {
+        a = a.join('|');
+        b = b.join('|');
+    }
     var cond = precision ? Math.abs(a-b) < precision : (a == b);
     return _check(cond, t, '' + a + ' == ' + b);
 }
@@ -99,6 +103,10 @@ function WVPASSEQ(a, b, precision) {
 
 function WVPASSNE(a, b, precision) {
     var t = trace()[1];
+    if (a.join && b.join) {
+        a = a.join('|');
+        b = b.join('|');
+    }
     var cond = precision ? Math.abs(a-b) >= precision : (a != b);
     return _check(a != b, t, '' + a + ' != ' + b);
 }
