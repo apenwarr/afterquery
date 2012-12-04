@@ -60,7 +60,7 @@ function formToUrl() {
   for (var parti in parts) {
     var part = parts[parti];
     if (part) {
-      var bits = trySplitOne(part, '=');
+      var bits = afterquery.trySplitOne(part, '=');
       if (bits) {
         out.push(niceEncode(bits[0]) + '=' + niceEncode(bits[1]));
       } else {
@@ -90,7 +90,7 @@ tmo = null;
 lastloaded = null;
 var exampleurl = (window.location.protocol + '//' + window.location.host +
                   '/example1.json');
-args = parseArgs(window.location.search || ('?url=' + exampleurl));
+args = afterquery.parseArgs(window.location.search || ('?url=' + exampleurl));
 argsToForm(args);
 updateUrl();
 </script>
