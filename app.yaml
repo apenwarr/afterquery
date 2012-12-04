@@ -8,21 +8,16 @@ handlers:
 - url: /
   static_files: render.html
   upload: render.html
-  expiration: "1h"
 - url: /edit
   static_files: edit.html
   upload: edit.html
-  expiration: "1h"
 - url: /help
   static_files: help.html
   upload: help.html
-  expiration: "1h"
 - url: /([^/]*).js
   static_files: \1.js
   upload: .*.js
-  expiration: "1h"
 - url: /([^/]*)\.json
   static_files: \1.json
   mime_type: text/plain
   upload: .*\.json
-  expiration: "1h"
