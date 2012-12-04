@@ -134,14 +134,14 @@ function guessTypes(data) {
 
 
 var DATE_RE1 = RegExp('^(\\d{4})[-/](\\d{1,2})(?:[-/](\\d{1,2})(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?$');
-var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+))?)?\\)$');
+var DATE_RE2 = RegExp('^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+)(?:,(\\d+)(?:,(\\d+))?)?)?\\)$');
 function myParseDate(s) {
   if (s == null) return s;
   if (s && s.getDate) return s;
   var g = DATE_RE1.exec(s) || DATE_RE2.exec(s);
   if (g) {
     return new Date(g[1], g[2]-1, g[3] || 1,
-		    g[4] || 0, g[5] || 0, g[6] || 0);
+		    g[4] || 0, g[5] || 0, g[6] || 0, g[7] || 0);
   }
   return NaN;
 }
