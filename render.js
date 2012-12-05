@@ -1115,7 +1115,7 @@ var afterquery = (function() {
 
     iframe.contentDocument.write(
         '<script async onerror="loaded" onload="loaded" src="' +
-        encodeURI(url) +
+        encodeURI(nurl) +
         '"></script>');
   }
 
