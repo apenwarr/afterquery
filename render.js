@@ -2,7 +2,7 @@
 
 var afterquery = (function() {
   // To appease v8shell
-  var console;
+  var console, localStorage;
   try {
     console = window.console;
   }
@@ -10,6 +10,11 @@ var afterquery = (function() {
     console = {
       debug: print
     };
+  }
+  try {
+    localStorage = window.localStorage;
+  } catch (ReferenceError) {
+    localStorage = {}
   }
 
   // For konqueror compatibility
@@ -1079,9 +1084,28 @@ var afterquery = (function() {
   }
 
 
+  var URL_RE = RegExp("^((\\w+:)?(//[^/]*)?)");
+
+
+  function urlMinusPath(url) {
+    var g = URL_RE.exec(url);
+    if (g && g[1]) {
+      return g[1];
+    } else {
+      return url;
+    }
+  }
+
+
   function getUrlData(url, success_func, error_func) {
     // some services expect callback=, some expect jsonp=, so supply both
     var plus = 'callback=jsonp&jsonp=jsonp';
+    var hostpart = urlMinusPath(url);
+    var auth = localStorage[['auth', hostpart]];
+    if (auth) {
+      plus += '&auth=' + encodeURIComponent(auth);
+    }
+
     var nurl;
     if (url.indexOf('?') >= 0) {
       nurl = url + '&' + plus;
@@ -1109,14 +1133,16 @@ var afterquery = (function() {
       error(null, message + ' url=' + xurl + ' line=' + lineno);
     };
 
-    iframe.contentWindow.loaded = function() {
-      alert('loaded');
-    };
-
-    iframe.contentDocument.write(
-        '<script async onerror="loaded" onload="loaded" src="' +
-        encodeURI(nurl) +
-        '"></script>');
+    //TODO(apenwarr): change the domain/origin attribute of the iframe.
+    //  That way the script won't be able to affect us, no matter how badly
+    //  behaved it might be.  That's important so they can't access our
+    //  localStorage, set cookies, etc.  We can use the new html5 postMessage
+    //  feature to safely send json data from the iframe back to us.
+    // ...but for the moment we have to trust the data provider.
+    var script = document.createElement('script');
+    script.async = 1;
+    script.src = nurl;
+    iframe.contentDocument.body.appendChild(script);
   }
 
 
@@ -1147,6 +1173,7 @@ var afterquery = (function() {
       orderBy: orderBy,
       extractRegexp: extractRegexp,
       fillNullsWithZero: fillNullsWithZero,
+      urlMinusPath: urlMinusPath,
       gridFromData: gridFromData
     },
     render: wrap(_run)

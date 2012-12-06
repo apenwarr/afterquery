@@ -113,3 +113,17 @@ wvtest('guessTypes', function() {
   WVPASSEQ(guessTypes(data2.concat(datanull)),
            ['date', 'datetime', 'number', 'string', 'boolean', 'boolean']);
 });
+
+
+wvtest('urlMinusPath', function() {
+  WVPASSEQ(afterquery.internal.urlMinusPath('http://x/y/z'),
+           'http://x');
+  WVPASSEQ(afterquery.internal.urlMinusPath('https://u:p@host:port/y/z'),
+           'https://u:p@host:port');
+  WVPASSEQ(afterquery.internal.urlMinusPath('http:foo/blah//whatever'),
+           'http:');
+  WVPASSEQ(afterquery.internal.urlMinusPath('foo/blah//whatever'),
+           'foo/blah//whatever');
+  WVPASSEQ(afterquery.internal.urlMinusPath('//foo/blah//whatever'),
+           '//foo');
+});

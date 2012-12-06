@@ -11,6 +11,9 @@ handlers:
 - url: /edit
   static_files: edit.html
   upload: edit.html
+- url: /(setauth|oauth2callback)
+  static_files: setauth.html
+  upload: setauth.html
 - url: /help
   static_files: help.html
   upload: help.html

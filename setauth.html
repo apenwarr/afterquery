@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<body>
+
+<script src="render.js"></script>
+<script>
+
+var args = afterquery.internal.parseArgs(
+    (window.location.search || '?') + '&' + window.location.hash.substr(1));
+
+var token = args.get('access_token') || args.get('auth');
+var url = args.get('state') || args.get('url');
+var hostpart = url ? afterquery.internal.urlMinusPath(url) : null;
+
+if (token && hostpart) {
+  localStorage[['auth', hostpart]] = token;
+}
+
+</script>
+
+</body>
+</html>
