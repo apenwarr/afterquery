@@ -1,0 +1,7 @@
+console.debug('in authtest.json', [jsonp_url]);
+if (jsonp_url.indexOf('auth=') >= 0) {
+  jsonp([['ok'], [true]]);
+} else {
+  tryOAuth2('https://accounts.google.com/o/oauth2/auth' +
+            '?scope=https://www.googleapis.com/auth/spreadsheets.readonly');
+}

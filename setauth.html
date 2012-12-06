@@ -9,11 +9,23 @@ var args = afterquery.internal.parseArgs(
     (window.location.search || '?') + '&' + window.location.hash.substr(1));
 
 var token = args.get('access_token') || args.get('auth');
-var url = args.get('state') || args.get('url');
+var state = args.get('state');
+console.debug('state is:', state);
+var stateargs = afterquery.internal.parseArgs('?' + (state || ''));
+var url = args.get('url') || stateargs.get('url');
+var continue_url = args.get('continue') || stateargs.get('continue');
 var hostpart = url ? afterquery.internal.urlMinusPath(url) : null;
 
 if (token && hostpart) {
   localStorage[['auth', hostpart]] = token;
+  document.write('Authorization successful.')
+} else {
+  document.write('Authorization was rejected.');
+}
+if (continue_url) {
+  afterquery.internal.checkUrlSafety(continue_url);
+  document.write(
+      ' <a href="' + continue_url + '">Continue >></a>');
 }
 
 </script>

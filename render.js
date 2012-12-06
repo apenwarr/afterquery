@@ -1097,6 +1097,13 @@ var afterquery = (function() {
   }
 
 
+  function checkUrlSafety(url) {
+    if (/[<>"''"]/.exec(url)) {
+      throw new Error("unsafe url detected. encoded=" + encodedURI(url));
+    }
+  }
+
+
   function getUrlData(url, success_func, error_func) {
     // some services expect callback=, some expect jsonp=, so supply both
     var plus = 'callback=jsonp&jsonp=jsonp';
@@ -1112,6 +1119,7 @@ var afterquery = (function() {
     } else {
       nurl = url + '?' + plus;
     }
+    console.debug('fetching data url:', nurl);
 
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
@@ -1119,6 +1127,46 @@ var afterquery = (function() {
 
     // the default jsonp callback
     iframe.contentWindow.jsonp = success_func;
+
+    // a callback the jsonp can execute if oauth2 authentication is needed
+    iframe.contentWindow.tryOAuth2 = function(oauth2_url) {
+      var hostpart = urlMinusPath(oauth2_url);
+      var oauth_appends = {
+        'https://accounts.google.com':
+            'client_id=41470923181.apps.googleusercontent.com'
+        // (If you register afterquery with any other API providers, add the
+        //  app ids here.  app client_id fields are not secret in oauth2;
+        //  there's a client_secret, but it's not needed in pure javascript.)
+      }
+      var plus = [oauth_appends[hostpart]];
+      if (plus) {
+        plus += '&response_type=token';
+        plus += '&state=' +
+            encodeURIComponent(
+                'url=' + encodeURIComponent(url) +
+                '&continue=' + encodeURIComponent(window.top.location));
+        plus += '&redirect_uri=' +
+            encodeURIComponent(window.location.origin + '/oauth2callback');
+        var want_url;
+        if (oauth2_url.indexOf('?') >= 0) {
+          want_url = oauth2_url + '&' + plus;
+        } else {
+          want_url = oauth2_url + '?' + plus;
+        }
+        console.debug('oauth2 redirect:', want_url);
+        checkUrlSafety(want_url);
+        document.write('Click here to ' +
+                       '<a target="_top" ' +
+                       '  href="' + want_url +
+                       '">authorize the data source</a>.');
+      } else {
+        console.debug('no oauth2 service known for host', hostpart);
+        document.write("Data source requires authorization, but I don't " +
+                       "know how to oauth2 authorize urls from <b>" +
+                       encodeURI(hostpart) +
+                       "</b> - sorry.");
+      }
+    }
 
     // some services are hardcoded to use the gviz callback, so supply that too
     iframe.contentWindow.google = {
@@ -1132,6 +1180,8 @@ var afterquery = (function() {
     iframe.contentWindow.onerror = function(message, xurl, lineno) {
       error(null, message + ' url=' + xurl + ' line=' + lineno);
     };
+
+    iframe.contentWindow.jsonp_url = nurl;
 
     //TODO(apenwarr): change the domain/origin attribute of the iframe.
     //  That way the script won't be able to affect us, no matter how badly
@@ -1174,6 +1224,7 @@ var afterquery = (function() {
       extractRegexp: extractRegexp,
       fillNullsWithZero: fillNullsWithZero,
       urlMinusPath: urlMinusPath,
+      checkUrlSafety: checkUrlSafety,
       gridFromData: gridFromData
     },
     render: wrap(_run)
