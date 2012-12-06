@@ -1104,7 +1104,7 @@ var afterquery = (function() {
   }
 
 
-  function getUrlData(url, success_func, error_func) {
+  function extendDataUrl(url) {
     // some services expect callback=, some expect jsonp=, so supply both
     var plus = 'callback=jsonp&jsonp=jsonp';
     var hostpart = urlMinusPath(url);
@@ -1113,13 +1113,16 @@ var afterquery = (function() {
       plus += '&auth=' + encodeURIComponent(auth);
     }
 
-    var nurl;
     if (url.indexOf('?') >= 0) {
-      nurl = url + '&' + plus;
+      return url + '&' + plus;
     } else {
-      nurl = url + '?' + plus;
+      return url + '?' + plus;
     }
-    console.debug('fetching data url:', nurl);
+  }
+
+
+  function getUrlData(url, success_func, error_func) {
+    console.debug('fetching data url:', url);
 
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
@@ -1181,7 +1184,7 @@ var afterquery = (function() {
       error(null, message + ' url=' + xurl + ' line=' + lineno);
     };
 
-    iframe.contentWindow.jsonp_url = nurl;
+    iframe.contentWindow.jsonp_url = url;
 
     //TODO(apenwarr): change the domain/origin attribute of the iframe.
     //  That way the script won't be able to affect us, no matter how badly
@@ -1191,7 +1194,7 @@ var afterquery = (function() {
     // ...but for the moment we have to trust the data provider.
     var script = document.createElement('script');
     script.async = 1;
-    script.src = nurl;
+    script.src = url;
     iframe.contentDocument.body.appendChild(script);
   }
 
@@ -1199,7 +1202,9 @@ var afterquery = (function() {
   function _run(query) {
     var args = parseArgs(query);
     var url = args.get('url');
+    console.debug('original data url:', url);
     if (!url) throw new Error('Missing url= in query parameter');
+    url = extendDataUrl(url);
     showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
     getUrlData(url, wrap(gotData, args), wrap(gotError, url));
     var editlink = args.get('editlink');
