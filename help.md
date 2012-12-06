@@ -222,10 +222,10 @@ Available transforms:
 
 ## Example 1
 
-Here is some raw data [(source)](example2.json) produced by an
+Here is some raw data [(source)](example2.json.txt) produced by an
 analytics program:
 
-<iframe src="example2.json">
+<iframe src="example2.json.txt">
 </iframe>
 
 (Tip: in the tables and charts below, click the "Edit" link in the

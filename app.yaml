@@ -25,5 +25,8 @@ handlers:
   upload: .*.js
 - url: /([^/]*)\.json
   static_files: \1.json
-  mime_type: text/plain
   upload: .*\.json
+- url: /([^/]*)\.json\.txt
+  static_files: \1.json.txt
+  mime_type: text/plain
+  upload: .*\.json\.txt
