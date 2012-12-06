@@ -14,6 +14,9 @@ handlers:
 - url: /(setauth|oauth2callback)
   static_files: setauth.html
   upload: setauth.html
+- url: /flush
+  static_files: flush.html
+  upload: flush.html
 - url: /help
   static_files: help.html
   upload: help.html

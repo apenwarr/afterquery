@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<body>
+
+<script>
+
+console.debug('flushing localStorage');
+for (var i in localStorage) {
+  delete localStorage[i];
+}
+document.write('localStorage flushed');
+
+</script>
+
+</body>
+</html>
