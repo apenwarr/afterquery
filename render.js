@@ -892,6 +892,13 @@ var afterquery = (function() {
     };
     step(0);
   }
+  
+  
+  function maybeSet(dict, key, value) {
+    if (!(key in dict)) {
+      dict[key] = value;
+    }
+  }
 
 
   function gotData(args, gotdata) {
@@ -936,7 +943,13 @@ var afterquery = (function() {
 
     enqueue('gentable', function() {
       if (chartops) {
-        if (chartops == 'stacked' || chartops == 'stackedarea') {
+	var chartbits = chartops.split(',');
+	var charttype = chartbits.shift();
+	for (var charti in chartbits) {
+	  var kv = trySplitOne(chartbits[charti], '=');
+	  options[kv[0]] = kv[1];
+	}
+        if (charttype == 'stacked' || charttype == 'stackedarea') {
           // Some charts react badly to missing values, so fill them in.
           grid = fillNullsWithZero(grid);
         }
@@ -944,16 +957,16 @@ var afterquery = (function() {
         if (args.get('title')) {
           options.title = args.get('title');
         }
-        if (chartops == 'stackedarea' || chartops == 'stacked') {
+        if (charttype == 'stackedarea' || charttype == 'stacked') {
           t = new google.visualization.AreaChart(el);
           options.isStacked = true;
-        } else if (chartops == 'column') {
+        } else if (charttype == 'column') {
           t = new google.visualization.ColumnChart(el);
-        } else if (chartops == 'bar') {
+        } else if (charttype == 'bar') {
           t = new google.visualization.BarChart(el);
-        } else if (chartops == 'line') {
+        } else if (charttype == 'line') {
           t = new google.visualization.LineChart(el);
-        } else if (chartops == 'spark') {
+        } else if (charttype == 'spark') {
           // sparkline chart: get rid of everything but the data series.
           // Looks best when small.
           options.hAxis = {};
@@ -970,25 +983,25 @@ var afterquery = (function() {
           options.legend = {};
           options.legend.position = 'none';
           t = new google.visualization.LineChart(el);
-        } else if (chartops == 'pie') {
+        } else if (charttype == 'pie') {
           t = new google.visualization.PieChart(el);
-        } else if (chartops == 'tree') {
-          options.maxDepth = 3;
-          options.maxPostDepth = 1;
-          options.showScale = 1;
+        } else if (charttype == 'tree') {
+	  maybeSet(options, 'maxDepth', 3);
+	  maybeSet(options, 'maxPostDepth', 1);
+	  maybeSet(options, 'showScale', 1);
           t = new google.visualization.TreeMap(el);
-        } else if (chartops == 'candle' || chartops == 'candlestick') {
+        } else if (charttype == 'candle' || charttype == 'candlestick') {
           t = new google.visualization.CandlestickChart(el);
-        } else if (chartops == 'timeline') {
+        } else if (charttype == 'timeline') {
           t = new google.visualization.AnnotatedTimeLine(el);
-        } else if (chartops == 'dygraph' || chartops == 'dygraph+errors') {
+        } else if (charttype == 'dygraph' || charttype == 'dygraph+errors') {
           t = new Dygraph.GVizChart(el);
-          options.showRoller = true;
-          if (chartops == 'dygraph+errors') {
+          maybeSet(options, 'showRoller', true);
+          if (charttype == 'dygraph+errors') {
             options.errorBars = true;
           }
         } else {
-          throw new Error('unknown chart type "' + chartops + '"');
+          throw new Error('unknown chart type "' + charttype + '"');
         }
         $(el).height(window.innerHeight);
         datatable = dataToGvizTable(grid, { show_only_lastseg: true });
