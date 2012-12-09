@@ -532,6 +532,23 @@ var afterquery = (function() {
   }
   
   
+  function invertTree(ingrid, key) {
+    if (!key) {
+      key = '_tree';
+    }
+    var keycol = keyToColNum(ingrid, key);
+    var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
+    for (var rowi in ingrid.data) {
+      var row = ingrid.data[rowi];
+      var cell = row[keycol];
+      var outrow = row.slice();
+      outrow[keycol] = cell.split('|').reverse().join('|');
+      outgrid.data.push(outrow);
+    }
+    return outgrid;
+  }
+  
+  
   function crackTree(ingrid, key) {
     if (!key) {
       key = '_tree';
@@ -651,6 +668,16 @@ var afterquery = (function() {
     var keys = splitNoEmpty(argval, ',');
     console.debug('finishtree with keys', keys);
     grid = finishTree(grid, keys);
+    console.debug('grid:', grid);
+    return grid;
+  }
+
+
+  function doInvertTree(grid, argval) {
+    console.debug('invertTree:', argval);
+    var keys = splitNoEmpty(argval, ',');
+    console.debug('invertTree with key', keys[0]);
+    grid = invertTree(grid, keys[0]);
     console.debug('grid:', grid);
     return grid;
   }
@@ -1015,6 +1042,8 @@ var afterquery = (function() {
         transform(doTreeGroupBy, argval);
       } else if (argkey == 'finishtree') {
         transform(doFinishTree, argval);
+      } else if (argkey == 'inverttree') {
+        transform(doInvertTree, argval);
       } else if (argkey == 'cracktree') {
         transform(doCrackTree, argval);
       } else if (argkey == 'pivot') {
