@@ -238,12 +238,10 @@ var afterquery = (function() {
     }
     return outgrid;
   }
-
-
-  var agg_types = {
-    count: T_NUM,
-    sum: T_NUM
-  };
+  
+  
+  var colormap = {};
+  var next_color = 0;
 
 
   var agg_funcs = {
@@ -312,6 +310,16 @@ var afterquery = (function() {
         acc += parseFloat(l[i]);
       }
       return acc;
+    },
+    
+    color: function(l) {
+      for (var i in l) {
+	var v = l[i];
+	if (!(v in colormap)) {
+	  colormap[v] = ++next_color;
+	}
+	return colormap[v];
+      }
     }
   };
   agg_funcs.count.return_type = T_NUM;
