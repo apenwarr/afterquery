@@ -800,18 +800,26 @@ var afterquery = (function() {
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
-      var found = 0;
+      var found = 0, skipped = 0;
       for (var wordi in words) {
+	var word = words[wordi];
+	if (word[0] == '!' || word[0] == '-') {
+	  found = 1;
+	}
         for (var coli in row) {
           var cell = row[coli];
-          if (cell.indexOf && cell.indexOf(words[wordi]) >= 0) {
+          if (cell.toString().indexOf(word) >= 0) {
             found = 1;
             break;
-          }
+          } else if ((word[0] == '!' || word[0] == '-') &&
+		     cell.toString().indexOf(word.substr(1)) >= 0) {
+	    skipped = 1;
+	    break;
+	  }
         }
-        if (found) break;
+        if (found || skipped) break;
       }
-      if (found) {
+      if (found && !skipped) {
         outgrid.data.push(row);
       }
     }
