@@ -1,3 +1,18 @@
+/*
+ * Copyright 2012 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
 
 var afterquery = (function() {
@@ -238,8 +253,8 @@ var afterquery = (function() {
     }
     return outgrid;
   }
-  
-  
+
+
   var colormap = {};
   var next_color = 0;
 
@@ -311,14 +326,14 @@ var afterquery = (function() {
       }
       return acc;
     },
-    
+
     color: function(l) {
       for (var i in l) {
-	var v = l[i];
-	if (!(v in colormap)) {
-	  colormap[v] = ++next_color;
-	}
-	return colormap[v];
+        var v = l[i];
+        if (!(v in colormap)) {
+          colormap[v] = ++next_color;
+        }
+        return colormap[v];
       }
     }
   };
@@ -347,7 +362,7 @@ var afterquery = (function() {
         var colnum = keyToColNum(ingrid, field);
         if (!func) {
           if (ingrid.types[colnum] === T_NUM ||
-	      ingrid.types[colnum]===T_BOOL) {
+              ingrid.types[colnum]===T_BOOL) {
             func = agg_funcs.sum;
           } else {
             func = agg_funcs.count;
@@ -463,8 +478,8 @@ var afterquery = (function() {
     }
     return out;
   }
-  
-  
+
+
   function treeJoinKeys(ingrid, nkeys) {
     var outgrid = {
         headers: ['_tree'].concat(ingrid.headers.slice(nkeys)),
@@ -476,13 +491,13 @@ var afterquery = (function() {
       var row = ingrid.data[rowi];
       var key = row.slice(0, nkeys);
       var newkey = stringifiedCols(row.slice(0, nkeys),
-				   ingrid.types.slice(0, nkeys)).join('|');
+                                   ingrid.types.slice(0, nkeys)).join('|');
       outgrid.data.push([newkey].concat(row.slice(nkeys)));
     }
     return outgrid;
   }
-  
-  
+
+
   function finishTree(ingrid, keys) {
     if (keys.length < 1) {
       keys = ['_tree'];
@@ -492,46 +507,46 @@ var afterquery = (function() {
     for (var keyi in keys) {
       keycols.push(keyToColNum(ingrid, keys[keyi]));
     }
-    
+
     var seen = {};
     var needed = {};
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
       var key = [];
       for (var keyi in keycols) {
-	var keycol = keycols[keyi];
-	key.push(row[keycol]);
+        var keycol = keycols[keyi];
+        key.push(row[keycol]);
       }
       seen[key] = 1;
       delete needed[key];
       outgrid.data.push(row);
-      
+
       var treekey = key.pop().split('|');
       while (treekey.length > 0) {
-	treekey.pop();
-	var pkey = key.concat([treekey.join('|')]);
-	if (pkey in needed || pkey in seen) break;
-	needed[pkey] = [treekey.slice(), row];
+        treekey.pop();
+        var pkey = key.concat([treekey.join('|')]);
+        if (pkey in needed || pkey in seen) break;
+        needed[pkey] = [treekey.slice(), row];
       }
     }
-    
+
     var treecol = keycols.pop();
     for (var needkey in needed) {
       var treekey = needed[needkey][0];
       var inrow = needed[needkey][1];
       var outrow = []
       for (var keycoli in keycols) {
-	var keycol = keycols[keycoli];
-	outrow[keycol] = inrow[keycol];
+        var keycol = keycols[keycoli];
+        outrow[keycol] = inrow[keycol];
       }
       outrow[treecol] = treekey.join('|');
       outgrid.data.push(outrow);
     }
-    
+
     return outgrid;
   }
-  
-  
+
+
   function invertTree(ingrid, key) {
     if (!key) {
       key = '_tree';
@@ -547,8 +562,8 @@ var afterquery = (function() {
     }
     return outgrid;
   }
-  
-  
+
+
   function crackTree(ingrid, key) {
     if (!key) {
       key = '_tree';
@@ -557,38 +572,38 @@ var afterquery = (function() {
     var outgrid = {
       headers:
         [].concat(ingrid.headers.slice(0, keycol),
-		  ['_id', '_parent'],
-		  ingrid.headers.slice(keycol + 1)),
+                  ['_id', '_parent'],
+                  ingrid.headers.slice(keycol + 1)),
       data: [],
       types:
         [].concat(ingrid.types.slice(0, keycol),
-		  [T_STRING, T_STRING],
-		  ingrid.types.slice(keycol + 1))
+                  [T_STRING, T_STRING],
+                  ingrid.types.slice(keycol + 1))
     };
-    
+
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
       var key = row[keycol];
       var pkey;
       if (!key) {
-	key = 'ALL';
-	pkey = '';
+        key = 'ALL';
+        pkey = '';
       } else {
-	var keylist = key.split('|');
-	keylist.pop();
-	pkey = keylist.join('|');
-	if (!pkey) {
-	  pkey = 'ALL';
-	}
+        var keylist = key.split('|');
+        keylist.pop();
+        pkey = keylist.join('|');
+        if (!pkey) {
+          pkey = 'ALL';
+        }
       }
       outgrid.data.push([].concat(row.slice(0, keycol),
-				  [key, pkey],
-				  row.slice(keycol + 1)));
+                                  [key, pkey],
+                                  row.slice(keycol + 1)));
    }
     return outgrid;
   }
 
-  
+
   function splitNoEmpty(s, splitter) {
     if (!s) return [];
     return s.split(splitter);
@@ -742,7 +757,7 @@ var afterquery = (function() {
       var row = ingrid.data[rowi];
       var cell = row[keycol];
       if (cell == undefined) {
-	cell = null;
+        cell = null;
       }
       var found = 0;
       for (var valuei in wantvals) {
@@ -789,8 +804,8 @@ var afterquery = (function() {
     for (var opi in ops) {
       var op = ops[opi];
       if ((parts = trySplitOne(argval, op))) {
-	var matches = parts[1].split(',');
-	console.debug('filterBy parsed:', parts[0], op, matches);
+        var matches = parts[1].split(',');
+        console.debug('filterBy parsed:', parts[0], op, matches);
         grid = filterBy(grid, parts[0], op, matches);
         console.debug('grid:', grid);
         return grid;
@@ -807,20 +822,20 @@ var afterquery = (function() {
       var row = ingrid.data[rowi];
       var found = 0, skipped = 0;
       for (var wordi in words) {
-	var word = words[wordi];
-	if (word[0] == '!' || word[0] == '-') {
-	  found = 1;
-	}
+        var word = words[wordi];
+        if (word[0] == '!' || word[0] == '-') {
+          found = 1;
+        }
         for (var coli in row) {
           var cell = row[coli];
           if (cell.toString().indexOf(word) >= 0) {
             found = 1;
             break;
           } else if ((word[0] == '!' || word[0] == '-') &&
-		     cell.toString().indexOf(word.substr(1)) >= 0) {
-	    skipped = 1;
-	    break;
-	  }
+                     cell.toString().indexOf(word.substr(1)) >= 0) {
+            skipped = 1;
+            break;
+          }
         }
         if (found || skipped) break;
       }
@@ -1023,8 +1038,8 @@ var afterquery = (function() {
     };
     step(0);
   }
-  
-  
+
+
   function maybeSet(dict, key, value) {
     if (!(key in dict)) {
       dict[key] = value;
@@ -1080,12 +1095,12 @@ var afterquery = (function() {
 
     enqueue('gentable', function() {
       if (chartops) {
-	var chartbits = chartops.split(',');
-	var charttype = chartbits.shift();
-	for (var charti in chartbits) {
-	  var kv = trySplitOne(chartbits[charti], '=');
-	  options[kv[0]] = kv[1];
-	}
+        var chartbits = chartops.split(',');
+        var charttype = chartbits.shift();
+        for (var charti in chartbits) {
+          var kv = trySplitOne(chartbits[charti], '=');
+          options[kv[0]] = kv[1];
+        }
         if (charttype == 'stacked' || charttype == 'stackedarea') {
           // Some charts react badly to missing values, so fill them in.
           grid = fillNullsWithZero(grid);
@@ -1123,13 +1138,13 @@ var afterquery = (function() {
         } else if (charttype == 'pie') {
           t = new google.visualization.PieChart(el);
         } else if (charttype == 'tree') {
-	  if (grid.headers[0] == '_tree') {
-	    grid = finishTree(grid, ['_tree']);
-	    grid = crackTree(grid, '_tree');
-	  }
-	  maybeSet(options, 'maxDepth', 3);
-	  maybeSet(options, 'maxPostDepth', 1);
-	  maybeSet(options, 'showScale', 1);
+          if (grid.headers[0] == '_tree') {
+            grid = finishTree(grid, ['_tree']);
+            grid = crackTree(grid, '_tree');
+          }
+          maybeSet(options, 'maxDepth', 3);
+          maybeSet(options, 'maxPostDepth', 1);
+          maybeSet(options, 'showScale', 1);
           t = new google.visualization.TreeMap(el);
         } else if (charttype == 'candle' || charttype == 'candlestick') {
           t = new google.visualization.CandlestickChart(el);
