@@ -741,6 +741,9 @@ var afterquery = (function() {
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
       var cell = row[keycol];
+      if (cell == undefined) {
+	cell = null;
+      }
       var found = 0;
       for (var valuei in wantvals) {
         if (op == '=' && cell == wantvals[valuei]) {
@@ -786,7 +789,9 @@ var afterquery = (function() {
     for (var opi in ops) {
       var op = ops[opi];
       if ((parts = trySplitOne(argval, op))) {
-        grid = filterBy(grid, parts[0], op, parts[1].split(','));
+	var matches = parts[1].split(',');
+	console.debug('filterBy parsed:', parts[0], op, matches);
+        grid = filterBy(grid, parts[0], op, matches);
         console.debug('grid:', grid);
         return grid;
       }
@@ -852,8 +857,8 @@ var afterquery = (function() {
         var keycol = keycols[keyi][0], invert = keycols[keyi][1];
         var av = a[keycol], bv = b[keycol];
         if (grid.types[keycol] === T_NUM) {
-          av = parseFloat(av);
-          bv = parseFloat(bv);
+          av = parseFloat(av) || 0;
+          bv = parseFloat(bv) || 0;
         }
         if (av < bv) {
           return -1 * invert;
