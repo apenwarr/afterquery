@@ -937,6 +937,20 @@ var afterquery = (function() {
   }
 
 
+  function limitDecimalPrecision(grid) {
+    for (var rowi in grid.data) {
+      var row = grid.data[rowi];
+      for (var coli in row) {
+        var cell = row[coli];
+        if (cell === +cell) {
+          row[coli] = parseFloat(cell.toPrecision(15))
+        }
+      }
+    }
+    return grid;
+  }
+
+
   function fillNullsWithZero(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
@@ -1105,6 +1119,7 @@ var afterquery = (function() {
           // Some charts react badly to missing values, so fill them in.
           grid = fillNullsWithZero(grid);
         }
+        grid = limitDecimalPrecision(grid);
         var el = document.getElementById('vizchart');
         if (args.get('title')) {
           options.title = args.get('title');
