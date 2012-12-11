@@ -828,11 +828,11 @@ var afterquery = (function() {
         }
         for (var coli in row) {
           var cell = row[coli];
-          if (cell.toString().indexOf(word) >= 0) {
+          if (cell != null && cell.toString().indexOf(word) >= 0) {
             found = 1;
             break;
           } else if ((word[0] == '!' || word[0] == '-') &&
-                     cell.toString().indexOf(word.substr(1)) >= 0) {
+                     (cell != null && cell.toString().indexOf(word.substr(1)) >= 0)) {
             skipped = 1;
             break;
           }
