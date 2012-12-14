@@ -306,6 +306,16 @@ var afterquery = (function() {
       return l.length;
     },
 
+    count_nz: function(l) {
+      var acc = 0;
+      for (var i in l) {
+        if (l[i] != null && l[i] != 0) {
+          acc++;
+        }
+      }
+      return acc;
+    },
+
     count_distinct: function(l) {
       var a = {};
       for (var i in l) {
@@ -322,7 +332,7 @@ var afterquery = (function() {
       var acc;
       if (l.length) acc = 0;
       for (var i in l) {
-        acc += parseFloat(l[i]);
+        acc += parseFloat(l[i]) || 0;
       }
       return acc;
     },
