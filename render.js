@@ -348,7 +348,11 @@ var afterquery = (function() {
     }
   };
   agg_funcs.count.return_type = T_NUM;
+  agg_funcs.count_nz.return_type = T_NUM;
+  agg_funcs.count_distinct.return_type = T_NUM;
   agg_funcs.sum.return_type = T_NUM;
+  agg_funcs.cat.return_type = T_STRING;
+  agg_funcs.color.return_type = T_NUM;
 
 
   function groupBy(ingrid, keys, values) {
