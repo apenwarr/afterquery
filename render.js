@@ -378,6 +378,10 @@ var afterquery = (function() {
       return acc;
     },
 
+    avg: function(l) {
+      return agg_funcs.sum(l) / agg_funcs.count_nz(l);
+    },
+
     color: function(l) {
       for (var i in l) {
         var v = l[i];
@@ -392,6 +396,7 @@ var afterquery = (function() {
   agg_funcs.count_nz.return_type = T_NUM;
   agg_funcs.count_distinct.return_type = T_NUM;
   agg_funcs.sum.return_type = T_NUM;
+  agg_funcs.avg.return_type = T_NUM;
   agg_funcs.cat.return_type = T_STRING;
   agg_funcs.color.return_type = T_NUM;
 
