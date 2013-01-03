@@ -106,7 +106,8 @@ var afterquery = (function() {
     }
     return s.replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>\n');
   }
 
 
