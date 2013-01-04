@@ -964,14 +964,14 @@ var afterquery = (function() {
   }
 
 
-  function gridFromData(gotdata) {
+  function gridFromData(rawdata) {
     var headers, data, types;
 
     var err;
-    if (gotdata.errors && gotdata.errors.length) {
-      err = gotdata.errors[0];
-    } else if (gotdata.error) {
-      err = gotdata.error;
+    if (rawdata.errors && rawdata.errors.length) {
+      err = rawdata.errors[0];
+    } else if (rawdata.error) {
+      err = rawdata.error;
     }
     if (err) {
       var msglist = [];
@@ -980,16 +980,16 @@ var afterquery = (function() {
       throw new Error('Data provider returned an error: ' + msglist.join(': '));
     }
 
-    if (gotdata.table) {
+    if (rawdata.table) {
       // gviz format
       headers = [];
-      for (var headeri in gotdata.table.cols) {
-        headers.push(gotdata.table.cols[headeri].label ||
-                     gotdata.table.cols[headeri].id);
+      for (var headeri in rawdata.table.cols) {
+        headers.push(rawdata.table.cols[headeri].label ||
+                     rawdata.table.cols[headeri].id);
       }
       data = [];
-      for (var rowi in gotdata.table.rows) {
-        var row = gotdata.table.rows[rowi];
+      for (var rowi in rawdata.table.rows) {
+        var row = rawdata.table.rows[rowi];
         var orow = [];
         for (var coli in row.c) {
           var col = row.c[coli];
@@ -1002,19 +1002,19 @@ var afterquery = (function() {
         }
         data.push(orow);
       }
-    } else if (gotdata.data && gotdata.cols) {
+    } else if (rawdata.data && rawdata.cols) {
       // eqldata.com format
       headers = [];
-      for (var coli in gotdata.cols) {
-        var col = gotdata.cols[coli];
+      for (var coli in rawdata.cols) {
+        var col = rawdata.cols[coli];
         headers.push(col.caption);
       }
-      data = gotdata.data;
+      data = rawdata.data;
     } else {
       // assume simple [[cols...]...] (two-dimensional array) format, where
       // the first row is the headers.
-      headers = gotdata.shift();
-      data = gotdata;
+      headers = rawdata.shift();
+      data = rawdata;
     }
     types = guessTypes(data);
     parseDates(data, types);
@@ -1069,15 +1069,8 @@ var afterquery = (function() {
   }
 
 
-  function gotData(args, gotdata) {
-    var queue = [];
-    enqueue(queue, 'parse', function(grid, done) {
-      console.debug('gotdata:', gotdata);
-      grid = gridFromData(gotdata);
-      console.debug('grid:', grid);
-      done(grid);
-    });
-
+  function addTransforms(queue, args) {
+    var trace = args.get('trace');
     var argi;
 
     // helper function for synchronous transformations (ie. ones that return
@@ -1117,7 +1110,7 @@ var afterquery = (function() {
       }
     }
 
-    var chartops = args.get('chart'), trace = args.get('trace');
+    var chartops = args.get('chart');
     var t, datatable;
     var options = {};
 
@@ -1220,7 +1213,11 @@ var afterquery = (function() {
       t.draw(datatable, options);
       done(grid);
     });
+  }
 
+
+  function finishQueue(queue, args) {
+    var trace = args.get('trace');
     if (trace) {
       var prevdata;
       var after_each = function(grid, stepi, nsteps, text, msec_time) {
@@ -1420,7 +1417,23 @@ var afterquery = (function() {
     if (!url) throw new Error('Missing url= in query parameter');
     url = extendDataUrl(url);
     showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
-    getUrlData(url, wrap(gotData, args), wrap(gotError, url));
+
+    var queue = [];
+
+    enqueue(queue, 'get data', function(_, done) {
+      getUrlData(url, wrap(done), wrap(gotError, url));
+    });
+
+    enqueue(queue, 'parse', function(rawdata, done) {
+      console.debug('rawdata:', rawdata);
+      var outgrid = gridFromData(rawdata);
+      console.debug('grid:', outgrid);
+      done(outgrid);
+    });
+
+    addTransforms(queue, args);
+
+    finishQueue(queue, args);
     var editlink = args.get('editlink');
     if (editlink == 0) {
       $('#editmenu').hide();
