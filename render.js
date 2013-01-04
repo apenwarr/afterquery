@@ -98,7 +98,7 @@ var afterquery = (function() {
       dheaders.push({
         id: headers[i],
         label: headers[i],
-        type: types[i]
+        type: (types[i] != T_BOOL || !options.bool_to_num) ? types[i] : T_NUM
       });
     }
     var ddata = [];
@@ -1201,7 +1201,10 @@ var afterquery = (function() {
           throw new Error('unknown chart type "' + charttype + '"');
         }
         $(el).height(window.innerHeight);
-        datatable = dataToGvizTable(grid, { show_only_lastseg: true });
+        datatable = dataToGvizTable(grid, {
+            show_only_lastseg: true,
+            bool_to_num: true
+        });
       } else {
         var el = document.getElementById('viztable');
         t = new google.visualization.Table(el);
@@ -1229,7 +1232,12 @@ var afterquery = (function() {
 
     enqueue(queue, chartops ? 'chart=' + chartops : 'view',
             function(grid, done) {
-      t.draw(datatable, options);
+      if (grid.data.length) {
+        t.draw(datatable, options);
+      } else {
+        var el = document.getElementById('vizchart');
+        el.innerHTML = 'Empty dataset.';
+      }
       done(grid);
     });
   }
