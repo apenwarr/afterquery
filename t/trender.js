@@ -40,7 +40,7 @@ wvtest('parseArgs', function() {
 
   WVPASSEQ(afterquery.parseArgs('').all.join('|'), ',');
   WVPASSEQ(afterquery.parseArgs('?').all.join('|'), ',');
-  WVPASSEQ(afterquery.parseArgs('abc=def').all.join('|'), 'bc,def');
+  WVPASSEQ(afterquery.parseArgs('abc=def').all.join('|'), 'abc,def');
 });
 
 
@@ -159,4 +159,50 @@ wvtest('urlMinusPath', function() {
            'foo/blah//whatever');
   WVPASSEQ(afterquery.internal.urlMinusPath('//foo/blah//whatever'),
            '//foo');
+});
+
+
+function _gridAsText(grid) {
+  return [].concat(grid.headers, grid.types, grid.data);
+}
+
+
+wvtest('gridFromData', function() {
+  var rawdata = [
+    ['a', 'b', 'c'],
+    [1, 2, 3]
+  ];
+  var otherdata = [
+    ['a', 'b', 'c'],
+    [1, 2, 4]
+  ];
+  var grid = {
+    headers: ['a', 'b', 'c'],
+    data: [[1, 2, 3]],
+    types: ['boolean', 'number', 'number']
+  };
+  var gtext = _gridAsText(grid);
+  WVPASSEQ(_gridAsText(afterquery.internal.gridFromData(grid)), gtext);
+  WVPASSEQ(_gridAsText(afterquery.internal.gridFromData(rawdata)), gtext);
+  WVPASSNE(_gridAsText(afterquery.internal.gridFromData(otherdata)), gtext);
+});
+
+
+wvtest('exec', function() {
+  var rawdata = [
+    ['a', 'b', 'c'],
+    [1, 2, 3],
+    [1, 5, 6],
+    [1, 5, 9]
+  ];
+  afterquery.exec('group=a;', rawdata, function(grid) {
+    WVPASSEQ(grid.data, [[1]]);
+  });
+  afterquery.exec('group=a,b;count(c)&group=a', rawdata, function(grid) {
+    WVPASSEQ(grid.data, [[1, 7, 3]]);
+  });
+  afterquery.exec(['group=a,b;count(c)', 'pivot=a;b;c'], rawdata,
+		  function(grid) {
+    WVPASSEQ(grid.data, [[1, 1, 2]]);
+  });
 });

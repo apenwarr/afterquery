@@ -61,7 +61,17 @@ var afterquery = (function() {
 
 
   function parseArgs(query) {
-    var kvlist = query.substr(1).split('&');
+    var kvlist;
+    if (query.join) {
+      // user provided an array of 'key=value' strings
+      kvlist = query;
+    } else {
+      // assume user provided a single string
+      if (query[0] == '?' || query[0] == '#') {
+        query = query.substr(1);
+      }
+      kvlist = query.split('&');
+    }
     var out = {};
     var outlist = [];
     for (var i in kvlist) {
@@ -965,6 +975,11 @@ var afterquery = (function() {
 
 
   function gridFromData(rawdata) {
+    if (rawdata && rawdata.headers && rawdata.data && rawdata.types) {
+      // already in grid format
+      return rawdata;
+    }
+
     var headers, data, types;
 
     var err;
@@ -1013,8 +1028,8 @@ var afterquery = (function() {
     } else {
       // assume simple [[cols...]...] (two-dimensional array) format, where
       // the first row is the headers.
-      headers = rawdata.shift();
-      data = rawdata;
+      headers = rawdata[0];
+      data = rawdata.slice(1);
     }
     types = guessTypes(data);
     parseDates(data, types);
@@ -1109,7 +1124,11 @@ var afterquery = (function() {
         transform(doExtractRegexp, argval);
       }
     }
+  }
 
+
+  function addRenderers(queue, args) {
+    var trace = args.get('trace');
     var chartops = args.get('chart');
     var t, datatable;
     var options = {};
@@ -1216,7 +1235,7 @@ var afterquery = (function() {
   }
 
 
-  function finishQueue(queue, args) {
+  function finishQueue(queue, args, done) {
     var trace = args.get('trace');
     if (trace) {
       var prevdata;
@@ -1245,9 +1264,9 @@ var afterquery = (function() {
           $('.vizstep').show();
         }
       };
-      runqueue(queue, null, null, showstatus, wrap, after_each);
+      runqueue(queue, null, done, showstatus, wrap, after_each);
     } else {
-      runqueue(queue, null, null, showstatus, wrap);
+      runqueue(queue, null, done, showstatus, wrap);
     }
   }
 
@@ -1410,19 +1429,22 @@ var afterquery = (function() {
   }
 
 
-  function render(query) {
-    var args = parseArgs(query);
-    var url = args.get('url');
-    console.debug('original data url:', url);
-    if (!url) throw new Error('Missing url= in query parameter');
-    url = extendDataUrl(url);
-    showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
+  function addUrlGetters(queue, args, startdata) {
+    if (!startdata) {
+      var url = args.get('url');
+      console.debug('original data url:', url);
+      if (!url) throw new Error('Missing url= in query parameter');
+      url = extendDataUrl(url);
+      showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
 
-    var queue = [];
-
-    enqueue(queue, 'get data', function(_, done) {
-      getUrlData(url, wrap(done), wrap(gotError, url));
-    });
+      enqueue(queue, 'get data', function(_, done) {
+        getUrlData(url, wrap(done), wrap(gotError, url));
+      });
+    } else {
+      enqueue(queue, 'init data', function(_, done) {
+        done(startdata);
+      });
+    }
 
     enqueue(queue, 'parse', function(rawdata, done) {
       console.debug('rawdata:', rawdata);
@@ -1430,14 +1452,30 @@ var afterquery = (function() {
       console.debug('grid:', outgrid);
       done(outgrid);
     });
+  }
 
+
+  function exec(query, startdata, done) {
+    var args = parseArgs(query);
+    var queue = [];
+    addUrlGetters(queue, args, startdata);
     addTransforms(queue, args);
+    runqueue(queue, startdata, done);
+  }
 
-    finishQueue(queue, args);
+
+  function render(query, startdata, done) {
+    var args = parseArgs(query);
     var editlink = args.get('editlink');
     if (editlink == 0) {
       $('#editmenu').hide();
     }
+
+    var queue = [];
+    addUrlGetters(queue, args, startdata);
+    addTransforms(queue, args);
+    addRenderers(queue, args);
+    finishQueue(queue, args, done);
   }
 
 
@@ -1462,6 +1500,7 @@ var afterquery = (function() {
       gridFromData: gridFromData
     },
     parseArgs: parseArgs,
+    exec: exec,
     render: wrap(render)
   };
 })();
