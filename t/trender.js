@@ -29,17 +29,50 @@ var google = {
   }
 };
 
+
 wvtest('parseArgs', function() {
   var query = '?a=b&c=d&e==f&&g=h&g=i%25%31%31&a=&a=x';
-  var args = afterquery.internal.parseArgs(query);
+  var args = afterquery.parseArgs(query);
   WVPASSEQ(args.all.join('|'), 'a,b|c,d|e,=f|,|g,h|g,i%11|a,|a,x');
   WVPASSEQ(args.get('a'), 'x');
   WVPASSEQ(args.get(''), '');
   WVPASSEQ(args.get('g'), 'i%11');
 
-  WVPASSEQ(afterquery.internal.parseArgs('').all.join('|'), ',');
-  WVPASSEQ(afterquery.internal.parseArgs('?').all.join('|'), ',');
-  WVPASSEQ(afterquery.internal.parseArgs('abc=def').all.join('|'), 'bc,def');
+  WVPASSEQ(afterquery.parseArgs('').all.join('|'), ',');
+  WVPASSEQ(afterquery.parseArgs('?').all.join('|'), ',');
+  WVPASSEQ(afterquery.parseArgs('abc=def').all.join('|'), 'bc,def');
+});
+
+
+wvtest('argsToArray', function() {
+  var x = function() {
+    return afterquery.internal.argsToArray(arguments);
+  };
+  WVPASSEQ(x(1,2,3), [1,2,3]);
+  WVPASSEQ(x(1,2,3).slice(1), [2,3]);
+});
+
+
+// Fake setTimeout function for testing runqueue().  Just execute the
+// requested function immediately.
+function setTimeout(func, when) {
+  func();
+}
+
+
+wvtest('queue', function() {
+  var queue = [];
+  var vfinal = 'never-assigned';
+  afterquery.internal.enqueue(queue, 'step1', function(v, done) {
+    done(v + '1');
+  });
+  afterquery.internal.enqueue(queue, 'step2', function(v, done) {
+    done(v + '2');
+  });
+  afterquery.internal.runqueue(queue, 'foo', function(v) {
+    vfinal = v;
+  });
+  WVPASSEQ(vfinal, 'foo12');
 });
 
 

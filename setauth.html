@@ -5,13 +5,13 @@
 <script src="render.js"></script>
 <script>
 
-var args = afterquery.internal.parseArgs(
+var args = afterquery.parseArgs(
     (window.location.search || '?') + '&' + window.location.hash.substr(1));
 
 var token = args.get('access_token') || args.get('auth');
 var state = args.get('state');
 console.debug('state is:', state);
-var stateargs = afterquery.internal.parseArgs('?' + (state || ''));
+var stateargs = afterquery.parseArgs('?' + (state || ''));
 var url = args.get('url') || stateargs.get('url');
 var continue_url = args.get('continue') || stateargs.get('continue');
 var hostpart = url ? afterquery.internal.urlMinusPath(url) : null;

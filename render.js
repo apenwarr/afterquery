@@ -1022,32 +1022,40 @@ var afterquery = (function() {
   }
 
 
-  var _queue = [];
-
-
-  function enqueue() {
-    _queue.push([].slice.apply(arguments));
+  function enqueue(queue, stepname, func) {
+    queue.push([stepname, func]);
   }
 
 
-  function runqueue(after_each) {
+  function runqueue(queue, ingrid, done, showstatus, wrap_each, after_each) {
     var step = function(i) {
-      if (i < _queue.length) {
-        var el = _queue[i];
-        var text = el[0], func = el[1], args = el.slice(2);
-        showstatus('Running step ' + (+i + 1) + ' of ' + _queue.length + '...',
-                   text);
+      if (i < queue.length) {
+        var el = queue[i];
+        var text = el[0], func = el[1];
+        if (showstatus) {
+          showstatus('Running step ' + (+i + 1) + ' of ' +
+                     queue.length + '...',
+                     text);
+        }
         setTimeout(function() {
           var start = Date.now();
-          wrap(func).apply(null, args);
-          var end = Date.now();
-          if (after_each) {
-            after_each(i + 1, _queue.length, text, end - start);
-          }
-          step(i + 1);
+          var wfunc = wrap_each ? wrap_each(func) : func;
+          wfunc(ingrid, function(outgrid) {
+            var end = Date.now();
+            if (after_each) {
+              after_each(outgrid, i + 1, queue.length, text, end - start);
+            }
+            ingrid = outgrid;
+            step(i + 1);
+          });
         }, 0);
       } else {
-        showstatus('');
+        if (showstatus) {
+          showstatus('');
+        }
+        if (done) {
+          done(ingrid);
+        }
       }
     };
     step(0);
@@ -1062,17 +1070,23 @@ var afterquery = (function() {
 
 
   function gotData(args, gotdata) {
-    var grid;
-    enqueue('parse', function() {
+    var queue = [];
+    enqueue(queue, 'parse', function(grid, done) {
       console.debug('gotdata:', gotdata);
       grid = gridFromData(gotdata);
       console.debug('grid:', grid);
+      done(grid);
     });
 
     var argi;
+
+    // helper function for synchronous transformations (ie. ones that return
+    // the output grid rather than calling a callback)
     var transform = function(f, arg) {
-      enqueue(args.all[argi][0] + '=' + args.all[argi][1], function() {
-        grid = f(grid, arg);
+      enqueue(queue, args.all[argi][0] + '=' + args.all[argi][1],
+              function(ingrid, done) {
+        var outgrid = f(ingrid, arg);
+        done(outgrid);
       });
     };
 
@@ -1107,7 +1121,7 @@ var afterquery = (function() {
     var t, datatable;
     var options = {};
 
-    enqueue('gentable', function() {
+    enqueue(queue, 'gentable', function(grid, done) {
       if (chartops) {
         var chartbits = chartops.split(',');
         var charttype = chartbits.shift();
@@ -1198,15 +1212,18 @@ var afterquery = (function() {
           datetimeformat.format(datatable, coli);
         }
       }
+      done(grid);
     });
 
-    enqueue(chartops ? 'chart=' + chartops : 'view', function() {
+    enqueue(queue, chartops ? 'chart=' + chartops : 'view',
+            function(grid, done) {
       t.draw(datatable, options);
+      done(grid);
     });
 
     if (trace) {
       var prevdata;
-      var after_each = function(stepi, nsteps, text, msec_time) {
+      var after_each = function(grid, stepi, nsteps, text, msec_time) {
         $('#vizlog').append('<div class="vizstep" id="step' + stepi + '">' +
                             '  <div class="text"></div>' +
                             '  <div class="grid"></div>' +
@@ -1231,9 +1248,9 @@ var afterquery = (function() {
           $('.vizstep').show();
         }
       };
-      runqueue(after_each);
+      runqueue(queue, null, null, showstatus, wrap, after_each);
     } else {
-      runqueue();
+      runqueue(queue, null, null, showstatus, wrap);
     }
   }
 
@@ -1249,11 +1266,22 @@ var afterquery = (function() {
   }
 
 
+  function argsToArray(args) {
+    // call Array's slice() function on an 'arguments' structure, which is
+    // like an array but missing functions like slice().  The result is a
+    // real Array object, which is more useful.
+    return [].slice.apply(args);
+  }
+
+
   function wrap(func) {
-    var pre_args = [].slice.call(arguments, 1);
+    // pre_args is the arguments as passed at wrap() time
+    var pre_args = argsToArray(arguments).slice(1);
     var f = function() {
       try {
-        return func.apply(null, pre_args.concat([].slice.call(arguments)));
+        // post_args is the arguments as passed when calling f()
+        var post_args = argsToArray(arguments);
+        return func.apply(null, pre_args.concat(post_args));
       } catch (e) {
         $('#vizchart').hide();
         $('#viztable').hide();
@@ -1385,7 +1413,7 @@ var afterquery = (function() {
   }
 
 
-  function _run(query) {
+  function render(query) {
     var args = parseArgs(query);
     var url = args.get('url');
     console.debug('original data url:', url);
@@ -1399,9 +1427,9 @@ var afterquery = (function() {
     }
   }
 
+
   return {
     internal: {
-      parseArgs: parseArgs,
       trySplitOne: trySplitOne,
       dataToGvizTable: dataToGvizTable,
       guessTypes: guessTypes,
@@ -1415,8 +1443,12 @@ var afterquery = (function() {
       fillNullsWithZero: fillNullsWithZero,
       urlMinusPath: urlMinusPath,
       checkUrlSafety: checkUrlSafety,
+      argsToArray: argsToArray,
+      enqueue: enqueue,
+      runqueue: runqueue,
       gridFromData: gridFromData
     },
-    render: wrap(_run)
+    parseArgs: parseArgs,
+    render: wrap(render)
   };
 })();
