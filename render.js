@@ -61,7 +61,17 @@ var afterquery = (function() {
 
 
   function parseArgs(query) {
-    var kvlist = query.substr(1).split('&');
+    var kvlist;
+    if (query.join) {
+      // user provided an array of 'key=value' strings
+      kvlist = query;
+    } else {
+      // assume user provided a single string
+      if (query[0] == '?' || query[0] == '#') {
+        query = query.substr(1);
+      }
+      kvlist = query.split('&');
+    }
     var out = {};
     var outlist = [];
     for (var i in kvlist) {
@@ -120,7 +130,7 @@ var afterquery = (function() {
       dheaders.push({
         id: headers[i],
         label: headers[i],
-        type: types[i]
+        type: (types[i] != T_BOOL || !options.bool_to_num) ? types[i] : T_NUM
       });
     }
     var ddata = [];
@@ -1025,14 +1035,19 @@ var afterquery = (function() {
   }
 
 
-  function gridFromData(gotdata) {
+  function gridFromData(rawdata) {
+    if (rawdata && rawdata.headers && rawdata.data && rawdata.types) {
+      // already in grid format
+      return rawdata;
+    }
+
     var headers, data, types;
 
     var err;
-    if (gotdata.errors && gotdata.errors.length) {
-      err = gotdata.errors[0];
-    } else if (gotdata.error) {
-      err = gotdata.error;
+    if (rawdata.errors && rawdata.errors.length) {
+      err = rawdata.errors[0];
+    } else if (rawdata.error) {
+      err = rawdata.error;
     }
     if (err) {
       var msglist = [];
@@ -1041,16 +1056,16 @@ var afterquery = (function() {
       throw new Error('Data provider returned an error: ' + msglist.join(': '));
     }
 
-    if (gotdata.table) {
+    if (rawdata.table) {
       // gviz format
       headers = [];
-      for (var headeri in gotdata.table.cols) {
-        headers.push(gotdata.table.cols[headeri].label ||
-                     gotdata.table.cols[headeri].id);
+      for (var headeri in rawdata.table.cols) {
+        headers.push(rawdata.table.cols[headeri].label ||
+                     rawdata.table.cols[headeri].id);
       }
       data = [];
-      for (var rowi in gotdata.table.rows) {
-        var row = gotdata.table.rows[rowi];
+      for (var rowi in rawdata.table.rows) {
+        var row = rawdata.table.rows[rowi];
         var orow = [];
         for (var coli in row.c) {
           var col = row.c[coli];
@@ -1063,19 +1078,19 @@ var afterquery = (function() {
         }
         data.push(orow);
       }
-    } else if (gotdata.data && gotdata.cols) {
+    } else if (rawdata.data && rawdata.cols) {
       // eqldata.com format
       headers = [];
-      for (var coli in gotdata.cols) {
-        var col = gotdata.cols[coli];
+      for (var coli in rawdata.cols) {
+        var col = rawdata.cols[coli];
         headers.push(col.caption);
       }
-      data = gotdata.data;
+      data = rawdata.data;
     } else {
       // assume simple [[cols...]...] (two-dimensional array) format, where
       // the first row is the headers.
-      headers = gotdata.shift();
-      data = gotdata;
+      headers = rawdata[0];
+      data = rawdata.slice(1);
     }
     types = guessTypes(data);
     parseDates(data, types);
@@ -1083,32 +1098,40 @@ var afterquery = (function() {
   }
 
 
-  var _queue = [];
-
-
-  function enqueue() {
-    _queue.push([].slice.apply(arguments));
+  function enqueue(queue, stepname, func) {
+    queue.push([stepname, func]);
   }
 
 
-  function runqueue(after_each) {
+  function runqueue(queue, ingrid, done, showstatus, wrap_each, after_each) {
     var step = function(i) {
-      if (i < _queue.length) {
-        var el = _queue[i];
-        var text = el[0], func = el[1], args = el.slice(2);
-        showstatus('Running step ' + (+i + 1) + ' of ' + _queue.length + '...',
-                   text);
+      if (i < queue.length) {
+        var el = queue[i];
+        var text = el[0], func = el[1];
+        if (showstatus) {
+          showstatus('Running step ' + (+i + 1) + ' of ' +
+                     queue.length + '...',
+                     text);
+        }
         setTimeout(function() {
           var start = Date.now();
-          wrap(func).apply(null, args);
-          var end = Date.now();
-          if (after_each) {
-            after_each(i + 1, _queue.length, text, end - start);
-          }
-          step(i + 1);
+          var wfunc = wrap_each ? wrap_each(func) : func;
+          wfunc(ingrid, function(outgrid) {
+            var end = Date.now();
+            if (after_each) {
+              after_each(outgrid, i + 1, queue.length, text, end - start);
+            }
+            ingrid = outgrid;
+            step(i + 1);
+          });
         }, 0);
       } else {
-        showstatus('');
+        if (showstatus) {
+          showstatus('');
+        }
+        if (done) {
+          done(ingrid);
+        }
       }
     };
     step(0);
@@ -1122,18 +1145,17 @@ var afterquery = (function() {
   }
 
 
-  function gotData(args, gotdata) {
-    var grid;
-    enqueue('parse', function() {
-      console.debug('gotdata:', gotdata);
-      grid = gridFromData(gotdata);
-      console.debug('grid:', grid);
-    });
-
+  function addTransforms(queue, args) {
+    var trace = args.get('trace');
     var argi;
+
+    // helper function for synchronous transformations (ie. ones that return
+    // the output grid rather than calling a callback)
     var transform = function(f, arg) {
-      enqueue(args.all[argi][0] + '=' + args.all[argi][1], function() {
-        grid = f(grid, arg);
+      enqueue(queue, args.all[argi][0] + '=' + args.all[argi][1],
+              function(ingrid, done) {
+        var outgrid = f(ingrid, arg);
+        done(outgrid);
       });
     };
 
@@ -1163,12 +1185,16 @@ var afterquery = (function() {
         transform(doExtractRegexp, argval);
       }
     }
+  }
 
-    var chartops = args.get('chart'), trace = args.get('trace');
+
+  function addRenderers(queue, args) {
+    var trace = args.get('trace');
+    var chartops = args.get('chart');
     var t, datatable;
     var options = {};
 
-    enqueue('gentable', function() {
+    enqueue(queue, 'gentable', function(grid, done) {
       if (chartops) {
         var chartbits = chartops.split(',');
         var charttype = chartbits.shift();
@@ -1236,7 +1262,10 @@ var afterquery = (function() {
           throw new Error('unknown chart type "' + charttype + '"');
         }
         $(el).height(window.innerHeight);
-        datatable = dataToGvizTable(grid, { show_only_lastseg: true });
+        datatable = dataToGvizTable(grid, {
+            show_only_lastseg: true,
+            bool_to_num: true
+        });
       } else {
         var el = document.getElementById('viztable');
         t = new google.visualization.Table(el);
@@ -1260,15 +1289,27 @@ var afterquery = (function() {
           datetimeformat.format(datatable, coli);
         }
       }
+      done(grid);
     });
 
-    enqueue(chartops ? 'chart=' + chartops : 'view', function() {
-      t.draw(datatable, options);
+    enqueue(queue, chartops ? 'chart=' + chartops : 'view',
+            function(grid, done) {
+      if (grid.data.length) {
+        t.draw(datatable, options);
+      } else {
+        var el = document.getElementById('vizchart');
+        el.innerHTML = 'Empty dataset.';
+      }
+      done(grid);
     });
+  }
 
+
+  function finishQueue(queue, args, done) {
+    var trace = args.get('trace');
     if (trace) {
       var prevdata;
-      var after_each = function(stepi, nsteps, text, msec_time) {
+      var after_each = function(grid, stepi, nsteps, text, msec_time) {
         $('#vizlog').append('<div class="vizstep" id="step' + stepi + '">' +
                             '  <div class="text"></div>' +
                             '  <div class="grid"></div>' +
@@ -1293,9 +1334,9 @@ var afterquery = (function() {
           $('.vizstep').show();
         }
       };
-      runqueue(after_each);
+      runqueue(queue, null, done, showstatus, wrap, after_each);
     } else {
-      runqueue();
+      runqueue(queue, null, done, showstatus, wrap);
     }
   }
 
@@ -1311,11 +1352,22 @@ var afterquery = (function() {
   }
 
 
+  function argsToArray(args) {
+    // call Array's slice() function on an 'arguments' structure, which is
+    // like an array but missing functions like slice().  The result is a
+    // real Array object, which is more useful.
+    return [].slice.apply(args);
+  }
+
+
   function wrap(func) {
-    var pre_args = [].slice.call(arguments, 1);
+    // pre_args is the arguments as passed at wrap() time
+    var pre_args = argsToArray(arguments).slice(1);
     var f = function() {
       try {
-        return func.apply(null, pre_args.concat([].slice.call(arguments)));
+        // post_args is the arguments as passed when calling f()
+        var post_args = argsToArray(arguments);
+        return func.apply(null, pre_args.concat(post_args));
       } catch (e) {
         $('#vizchart').hide();
         $('#viztable').hide();
@@ -1447,23 +1499,58 @@ var afterquery = (function() {
   }
 
 
-  function _run(query) {
+  function addUrlGetters(queue, args, startdata) {
+    if (!startdata) {
+      var url = args.get('url');
+      console.debug('original data url:', url);
+      if (!url) throw new Error('Missing url= in query parameter');
+      url = extendDataUrl(url);
+      showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
+
+      enqueue(queue, 'get data', function(_, done) {
+        getUrlData(url, wrap(done), wrap(gotError, url));
+      });
+    } else {
+      enqueue(queue, 'init data', function(_, done) {
+        done(startdata);
+      });
+    }
+
+    enqueue(queue, 'parse', function(rawdata, done) {
+      console.debug('rawdata:', rawdata);
+      var outgrid = gridFromData(rawdata);
+      console.debug('grid:', outgrid);
+      done(outgrid);
+    });
+  }
+
+
+  function exec(query, startdata, done) {
     var args = parseArgs(query);
-    var url = args.get('url');
-    console.debug('original data url:', url);
-    if (!url) throw new Error('Missing url= in query parameter');
-    url = extendDataUrl(url);
-    showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
-    getUrlData(url, wrap(gotData, args), wrap(gotError, url));
+    var queue = [];
+    addUrlGetters(queue, args, startdata);
+    addTransforms(queue, args);
+    runqueue(queue, startdata, done);
+  }
+
+
+  function render(query, startdata, done) {
+    var args = parseArgs(query);
     var editlink = args.get('editlink');
     if (editlink == 0) {
       $('#editmenu').hide();
     }
+
+    var queue = [];
+    addUrlGetters(queue, args, startdata);
+    addTransforms(queue, args);
+    addRenderers(queue, args);
+    finishQueue(queue, args, done);
   }
+
 
   return {
     internal: {
-      parseArgs: parseArgs,
       trySplitOne: trySplitOne,
       dataToGvizTable: dataToGvizTable,
       guessTypes: guessTypes,
@@ -1477,8 +1564,13 @@ var afterquery = (function() {
       fillNullsWithZero: fillNullsWithZero,
       urlMinusPath: urlMinusPath,
       checkUrlSafety: checkUrlSafety,
+      argsToArray: argsToArray,
+      enqueue: enqueue,
+      runqueue: runqueue,
       gridFromData: gridFromData
     },
-    render: wrap(_run)
+    parseArgs: parseArgs,
+    exec: exec,
+    render: wrap(render)
   };
 })();

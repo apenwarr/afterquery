@@ -4,16 +4,26 @@ var files = {};
 function lookup(filename, line) {
     var f = files[filename];
     if (!f) {
-	f = files[filename] = read(filename).split('\n');
+        try {
+            f = files[filename] = read(filename).split('\n');
+        } catch (e) {
+            f = files[filename] = [];
+        }
     }
-    return f[line-1]; // file line numbers are 1-based
+    return f[line-1] || 'BAD_LINE'; // file line numbers are 1-based
 }
 
 
+// TODO(apenwarr): Right now this only really works right on chrome.
+// Maybe take some advice from this article:
+//  http://stackoverflow.com/questions/5358983/javascript-stack-inspection-on-safari-mobile-ipad
 function trace() {
     var FILELINE_RE = /[\b\s]\(?([^:\s]+):(\d+)/;
     var out = [];
     var e = Error().stack;
+    if (!e) {
+        return [['UNKNOWN', 0], ['UNKNOWN', 0]];
+    }
     var lines = e.split('\n');
     for (i in lines) {
 	if (i > 2) {

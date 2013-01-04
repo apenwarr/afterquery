@@ -2,8 +2,12 @@ default: all
 
 all: help.html
 
-v8shell: v8shell.cc
-	g++ -o $@ $< -lv8
+MACOS_JS_PATH=/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Resources/jsc
+jsshell:
+	rm -f $@
+	[ -e "${MACOS_JS_PATH}" ] && \
+	ln -s "${MACOS_JS_PATH}" jsshell || \
+	g++ -o $@ v8shell.cc -lv8
 
 runtests: $(patsubst %.js,%.js.run,$(wildcard t/t*.js))
 
@@ -11,12 +15,12 @@ runtests: $(patsubst %.js,%.js.run,$(wildcard t/t*.js))
 	markdown $< >$@.new
 	mv $@.new $@
 
-%.js.run: %.js v8shell
-	./v8shell wvtest.js $*.js
+%.js.run: %.js jsshell
+	./jsshell wvtest.js $*.js
 
-test: v8shell
+test: jsshell
 	./wvtestrun $(MAKE) runtests
 
 clean:
-	rm -f *~ .*~ */*~ */.*~ help.html v8shell
+	rm -f *~ .*~ */*~ */.*~ help.html v8shell jsshell
 	find . -name '*~' -exec rm -f {} \;
