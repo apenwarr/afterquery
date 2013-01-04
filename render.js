@@ -90,8 +90,39 @@ var afterquery = (function() {
   }
 
 
+  var IS_URL_RE = RegExp('^(http|https)://');
+
+  function looksLikeUrl(s) {
+    var url, label;
+    var pos = (s || '').lastIndexOf('|');
+    if (pos >= 0) {
+      url = s.substr(0, pos);
+      label = s.substr(pos + 1);
+    } else {
+      url = s;
+      label = s;
+    }
+    if (IS_URL_RE.exec(s)) {
+      return [url, label];
+    } else {
+      return;
+    }
+  }
+
+
+  function htmlEscape(s) {
+    if (s == undefined) {
+      return s;
+    }
+    return s.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+  }
+
+
   function dataToGvizTable(grid, options) {
     if (!options) options = {};
+    var is_html = options.allowHtml;
     var headers = grid.headers, data = grid.data, types = grid.types;
     var dheaders = [];
     for (var i in headers) {
@@ -105,7 +136,17 @@ var afterquery = (function() {
     for (var rowi in data) {
       var row = [];
       for (var coli in data[rowi]) {
-        var col = { v: data[rowi][coli] };
+        var cell = data[rowi][coli];
+        if (is_html && types[coli] === T_STRING) {
+          var urlresult = looksLikeUrl(cell);
+          if (urlresult) {
+            cell = '<a href="' + encodeURI(urlresult[0]) + '">' +
+                htmlEscape(urlresult[1]) + '</a>';
+          } else {
+            cell = htmlEscape(cell);
+          }
+        }
+        var col = { v: cell };
         if (options.show_only_lastseg && col.v && col.v.split) {
           var lastseg = col.v.split('|').pop();
           if (lastseg != col.v) {
@@ -316,6 +357,16 @@ var afterquery = (function() {
       return l.length;
     },
 
+    count_nz: function(l) {
+      var acc = 0;
+      for (var i in l) {
+        if (l[i] != null && l[i] != 0) {
+          acc++;
+        }
+      }
+      return acc;
+    },
+
     count_distinct: function(l) {
       var a = {};
       for (var i in l) {
@@ -332,9 +383,13 @@ var afterquery = (function() {
       var acc;
       if (l.length) acc = 0;
       for (var i in l) {
-        acc += parseFloat(l[i]);
+        acc += parseFloat(l[i]) || 0;
       }
       return acc;
+    },
+
+    avg: function(l) {
+      return agg_funcs.sum(l) / agg_funcs.count_nz(l);
     },
 
     color: function(l) {
@@ -348,7 +403,12 @@ var afterquery = (function() {
     }
   };
   agg_funcs.count.return_type = T_NUM;
+  agg_funcs.count_nz.return_type = T_NUM;
+  agg_funcs.count_distinct.return_type = T_NUM;
   agg_funcs.sum.return_type = T_NUM;
+  agg_funcs.avg.return_type = T_NUM;
+  agg_funcs.cat.return_type = T_STRING;
+  agg_funcs.color.return_type = T_NUM;
 
 
   function groupBy(ingrid, keys, values) {
@@ -1208,7 +1268,8 @@ var afterquery = (function() {
       } else {
         var el = document.getElementById('viztable');
         t = new google.visualization.Table(el);
-        datatable = dataToGvizTable(grid);
+        datatable = dataToGvizTable(grid, { allowHtml: true });
+        options.allowHtml = true;
       }
 
       var wantwidth = trace ? window.innerWidth - 40 : window.innerWidth;
