@@ -165,19 +165,19 @@ var afterquery = (function() {
     if (options.intensify) {
       var minval = 0, maxval = 0;
       for (var rowi in grid.data) {
-	var row = grid.data[rowi];
-	for (var coli in row) {
-	  var cell = row[coli];
-	  if (cell < minval) minval = cell;
-	  if (cell > maxval) maxval = cell;
-	}
+        var row = grid.data[rowi];
+        for (var coli in row) {
+          var cell = row[coli];
+          if (cell < minval) minval = cell;
+          if (cell > maxval) maxval = cell;
+        }
       }
 
       var formatter = new google.visualization.ColorFormat();
       formatter.addGradientRange(minval, 0, null, '#f88', '#fff');
       formatter.addGradientRange(0, maxval, null, '#fff', '#88f');
       for (var coli in grid.types) {
-	formatter.format(datatable, parseInt(coli));
+        formatter.format(datatable, parseInt(coli));
       }
     }
     return datatable;
@@ -923,7 +923,7 @@ var afterquery = (function() {
             break;
           } else if ((word[0] == '!' || word[0] == '-') &&
                      (cell != null &&
-		      cell.toString().indexOf(word.substr(1)) >= 0)) {
+                      cell.toString().indexOf(word.substr(1)) >= 0)) {
             skipped = 1;
             break;
           }
@@ -1285,12 +1285,12 @@ var afterquery = (function() {
           throw new Error('unknown chart type "' + charttype + '"');
         }
         $(el).height(window.innerHeight);
-	gridoptions.show_only_lastseg = true;
-	gridoptions.bool_to_num = true;
+        gridoptions.show_only_lastseg = true;
+        gridoptions.bool_to_num = true;
       } else {
         var el = document.getElementById('viztable');
         t = new google.visualization.Table(el);
-	gridoptions.allowHtml = true;
+        gridoptions.allowHtml = true;
         options.allowHtml = true;
       }
       datatable = dataToGvizTable(grid, gridoptions);
