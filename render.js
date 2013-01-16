@@ -164,20 +164,22 @@ var afterquery = (function() {
     });
     if (options.intensify) {
       var minval = 0, maxval = 0;
-      for (var rowi in grid.data) {
-        var row = grid.data[rowi];
-        for (var coli in row) {
-          var cell = row[coli];
+      for (var coli in grid.types) {
+        if (grid.types[coli] !== T_NUM) continue;
+        for (var rowi in grid.data) {
+          var cell = grid.data[rowi][coli];
           if (cell < minval) minval = cell;
           if (cell > maxval) maxval = cell;
         }
       }
 
       var formatter = new google.visualization.ColorFormat();
-      formatter.addGradientRange(minval, 0, null, '#f88', '#fff');
-      formatter.addGradientRange(0, maxval, null, '#fff', '#88f');
+      formatter.addGradientRange(minval - 1, 0, null, '#f88', '#fff');
+      formatter.addGradientRange(0, maxval + 1, null, '#fff', '#88f');
       for (var coli in grid.types) {
-        formatter.format(datatable, parseInt(coli));
+        if (grid.types[coli] == T_NUM) {
+          formatter.format(datatable, parseInt(coli));
+        }
       }
     }
     return datatable;
