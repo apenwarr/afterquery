@@ -29,7 +29,7 @@ var afterquery = (function() {
   try {
     localStorage = window.localStorage;
   } catch (ReferenceError) {
-    localStorage = {}
+    localStorage = {};
   }
 
   // For konqueror compatibility
@@ -158,10 +158,29 @@ var afterquery = (function() {
       }
       ddata.push({c: row});
     }
-    return new google.visualization.DataTable({
+    var datatable = new google.visualization.DataTable({
       cols: dheaders,
       rows: ddata
     });
+    if (options.intensify) {
+      var minval = 0, maxval = 0;
+      for (var rowi in grid.data) {
+	var row = grid.data[rowi];
+	for (var coli in row) {
+	  var cell = row[coli];
+	  if (cell < minval) minval = cell;
+	  if (cell > maxval) maxval = cell;
+	}
+      }
+
+      var formatter = new google.visualization.ColorFormat();
+      formatter.addGradientRange(minval, 0, null, '#f88', '#fff');
+      formatter.addGradientRange(0, maxval, null, '#fff', '#88f');
+      for (var coli in grid.types) {
+	formatter.format(datatable, parseInt(coli));
+      }
+    }
+    return datatable;
   }
 
 
@@ -433,7 +452,7 @@ var afterquery = (function() {
         var colnum = keyToColNum(ingrid, field);
         if (!func) {
           if (ingrid.types[colnum] === T_NUM ||
-              ingrid.types[colnum]===T_BOOL) {
+              ingrid.types[colnum] === T_BOOL) {
             func = agg_funcs.sum;
           } else {
             func = agg_funcs.count;
@@ -605,7 +624,7 @@ var afterquery = (function() {
     for (var needkey in needed) {
       var treekey = needed[needkey][0];
       var inrow = needed[needkey][1];
-      var outrow = []
+      var outrow = [];
       for (var keycoli in keycols) {
         var keycol = keycols[keycoli];
         outrow[keycol] = inrow[keycol];
@@ -903,7 +922,8 @@ var afterquery = (function() {
             found = 1;
             break;
           } else if ((word[0] == '!' || word[0] == '-') &&
-                     (cell != null && cell.toString().indexOf(word.substr(1)) >= 0)) {
+                     (cell != null &&
+		      cell.toString().indexOf(word.substr(1)) >= 0)) {
             skipped = 1;
             break;
           }
@@ -1014,7 +1034,7 @@ var afterquery = (function() {
       for (var coli in row) {
         var cell = row[coli];
         if (cell === +cell) {
-          row[coli] = parseFloat(cell.toPrecision(15))
+          row[coli] = parseFloat(cell.toPrecision(15));
         }
       }
     }
@@ -1193,6 +1213,9 @@ var afterquery = (function() {
     var chartops = args.get('chart');
     var t, datatable;
     var options = {};
+    var gridoptions = {
+      intensify: args.get('intensify') != undefined
+    };
 
     enqueue(queue, 'gentable', function(grid, done) {
       if (chartops) {
@@ -1262,16 +1285,15 @@ var afterquery = (function() {
           throw new Error('unknown chart type "' + charttype + '"');
         }
         $(el).height(window.innerHeight);
-        datatable = dataToGvizTable(grid, {
-            show_only_lastseg: true,
-            bool_to_num: true
-        });
+	gridoptions.show_only_lastseg = true;
+	gridoptions.bool_to_num = true;
       } else {
         var el = document.getElementById('viztable');
         t = new google.visualization.Table(el);
-        datatable = dataToGvizTable(grid, { allowHtml: true });
+	gridoptions.allowHtml = true;
         options.allowHtml = true;
       }
+      datatable = dataToGvizTable(grid, gridoptions);
 
       var wantwidth = trace ? window.innerWidth - 40 : window.innerWidth;
       $(el).width(wantwidth);
@@ -1382,7 +1404,7 @@ var afterquery = (function() {
   }
 
 
-  var URL_RE = RegExp("^((\\w+:)?(//[^/]*)?)");
+  var URL_RE = RegExp('^((\\w+:)?(//[^/]*)?)');
 
 
   function urlMinusPath(url) {
@@ -1397,7 +1419,7 @@ var afterquery = (function() {
 
   function checkUrlSafety(url) {
     if (/[<>"''"]/.exec(url)) {
-      throw new Error("unsafe url detected. encoded=" + encodedURI(url));
+      throw new Error('unsafe url detected. encoded=' + encodedURI(url));
     }
   }
 
@@ -1438,7 +1460,7 @@ var afterquery = (function() {
           // (If you register afterquery with any other API providers, add the
           //  app ids here.  app client_id fields are not secret in oauth2;
           //  there's a client_secret, but it's not needed in pure javascript.)
-        }
+        };
         var plus = [oauth_appends[hostpart]];
         if (plus) {
           plus += '&response_type=token';
@@ -1463,13 +1485,14 @@ var afterquery = (function() {
         } else {
           console.debug('no oauth2 service known for host', hostpart);
           document.write("Data source requires authorization, but I don't " +
-                         "know how to oauth2 authorize urls from <b>" +
+                         'know how to oauth2 authorize urls from <b>' +
                          encodeURI(hostpart) +
-                         "</b> - sorry.");
+                         '</b> - sorry.');
         }
-      }
+      };
 
-      // some services are hardcoded to use the gviz callback, so supply that too
+      // some services are hardcoded to use the gviz callback, so
+      // supply that too
       iframe.contentWindow.google = {
         visualization: {
           Query: {
