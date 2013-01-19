@@ -163,21 +163,42 @@ var afterquery = (function() {
       rows: ddata
     });
     if (options.intensify) {
-      var minval = 0, maxval = 0;
+      var minval, maxval;
+      var rowmin = [], rowmax = [];
+      var colmin = [], colmax = [];
       for (var coli in grid.types) {
         if (grid.types[coli] !== T_NUM) continue;
         for (var rowi in grid.data) {
           var cell = grid.data[rowi][coli];
-          if (cell < minval) minval = cell;
-          if (cell > maxval) maxval = cell;
+          if (cell < (minval || 0)) minval = cell;
+          if (cell > (maxval || 0)) maxval = cell;
+          if (cell < (rowmin[rowi] || 0)) rowmin[rowi] = cell;
+          if (cell > (rowmax[rowi] || 0)) rowmax[rowi] = cell;
+          if (cell < (colmin[coli] || 0)) colmin[coli] = cell;
+          if (cell > (colmax[coli] || 0)) colmax[coli] = cell;
         }
       }
 
-      var formatter = new google.visualization.ColorFormat();
-      formatter.addGradientRange(minval - 1, 0, null, '#f88', '#fff');
-      formatter.addGradientRange(0, maxval + 1, null, '#fff', '#88f');
       for (var coli in grid.types) {
         if (grid.types[coli] == T_NUM) {
+          var formatter = new google.visualization.ColorFormat();
+          var mn, mx;
+          if (options.intensify == 'xy') {
+            mn = minval;
+            mx = maxval;
+          } else if (options.intensify == 'y') {
+            console.debug(colmin, colmax);
+            mn = colmin[coli];
+            mx = colmax[coli];
+          } else if (options.intensify == 'x') {
+            throw new Error('sorry, intensify=x not supported yet');
+          } else {
+            throw new Error("unknown intensify= mode '" +
+                            options.intensify + "'");
+          }
+          console.debug('coli=' + coli + ' mn=' + mn + ' mx=' + mx);
+          formatter.addGradientRange(mn - 1, 0, null, '#f88', '#fff');
+          formatter.addGradientRange(0, mx + 1, null, '#fff', '#88f');
           formatter.format(datatable, parseInt(coli));
         }
       }
@@ -1220,8 +1241,12 @@ var afterquery = (function() {
     var chartops = args.get('chart');
     var t, datatable;
     var options = {};
+    var intensify = args.get('intensify');
+    if (intensify == '') {
+      intensify = 'xy';
+    }
     var gridoptions = {
-      intensify: args.get('intensify') != undefined
+      intensify: intensify
     };
 
     enqueue(queue, 'gentable', function(grid, done) {
