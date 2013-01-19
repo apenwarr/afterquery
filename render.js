@@ -247,7 +247,12 @@ var afterquery = (function() {
     if (s == null) return s;
     if (s && s.getDate) return s;
     var g = DATE_RE2.exec(s);
-    if (g) g = (',' + g[1]).split(',');
+    if (g) {
+      g = (',' + g[1]).split(',');
+      if (g.length >= 3) {
+        g[2]++;  // date objects start at month=0, for some reason
+      }
+    }
     if (!g || g.length > 8) g = DATE_RE1.exec(s);
     if (g) {
       return new Date(g[1], g[2] - 1, g[3] || 1,

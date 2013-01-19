@@ -169,17 +169,21 @@ function _gridAsText(grid) {
 
 wvtest('gridFromData', function() {
   var rawdata = [
-    ['a', 'b', 'c'],
-    [1, 2, 3]
+    ['a', 'b', 'c', 'd', 'e', 'f'],
+    [1, 2, 3,
+     '2012-1-1 2:03:04', 'Date(2013,0,2,3,4,5)', new Date(2014,0,3,4,5,6)]
   ];
   var otherdata = [
     ['a', 'b', 'c'],
-    [1, 2, 4]
+    [1, 2, 4,
+     '2012-1-1 2:03:04', 'Date(2013,0,2,3,4,5)', new Date(2014,0,3,4,5,6)]
   ];
   var grid = {
-    headers: ['a', 'b', 'c'],
-    data: [[1, 2, 3]],
-    types: ['boolean', 'number', 'number']
+    headers: ['a', 'b', 'c', 'd', 'e', 'f'],
+    data: [[1, 2, 3,
+            new Date(2012,0,1,2,3,4),
+            new Date(2013,0,2,3,4,5), new Date(2014,0,3,4,5,6)]],
+    types: ['boolean', 'number', 'number', 'datetime', 'datetime', 'datetime']
   };
   var gtext = _gridAsText(grid);
   WVPASSEQ(_gridAsText(afterquery.internal.gridFromData(grid)), gtext);
