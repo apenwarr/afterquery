@@ -991,9 +991,11 @@ var afterquery = (function() {
         var keycol = keycols[keyi][0], invert = keycols[keyi][1];
         var av = a[keycol], bv = b[keycol];
         if (grid.types[keycol] === T_NUM) {
-          av = parseFloat(av) || 0;
-          bv = parseFloat(bv) || 0;
+          av = parseFloat(av);
+          bv = parseFloat(bv);
         }
+        av = av || '0'; // ensure consistent ordering given NaN and undefined
+        bv = bv || '0';
         if (av < bv) {
           return -1 * invert;
         } else if (av > bv) {
