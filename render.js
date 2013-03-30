@@ -1315,6 +1315,8 @@ var afterquery = (function() {
           if (charttype == 'dygraph+errors') {
             options.errorBars = true;
           }
+        } else if (charttype == 'heatgrid') {
+          t = new HeatGrid(el);
         } else {
           throw new Error('unknown chart type "' + charttype + '"');
         }
@@ -1325,19 +1327,24 @@ var afterquery = (function() {
         gridoptions.allowHtml = true;
         options.allowHtml = true;
       }
-      datatable = dataToGvizTable(grid, gridoptions);
 
-      var dateformat = new google.visualization.DateFormat({
-        pattern: 'yyyy-MM-dd'
-      });
-      var datetimeformat = new google.visualization.DateFormat({
-        pattern: 'yyyy-MM-dd HH:mm:ss'
-      });
-      for (var coli = 0; coli < grid.types.length; coli++) {
-        if (grid.types[coli] === T_DATE) {
-          dateformat.format(datatable, coli);
-        } else if (grid.types[coli] === T_DATETIME) {
-          datetimeformat.format(datatable, coli);
+      if (charttype == 'heatgrid') {
+        datatable = grid;
+      } else {
+        datatable = dataToGvizTable(grid, gridoptions);
+
+        var dateformat = new google.visualization.DateFormat({
+          pattern: 'yyyy-MM-dd'
+        });
+        var datetimeformat = new google.visualization.DateFormat({
+          pattern: 'yyyy-MM-dd HH:mm:ss'
+        });
+        for (var coli = 0; coli < grid.types.length; coli++) {
+          if (grid.types[coli] === T_DATE) {
+            dateformat.format(datatable, coli);
+          } else if (grid.types[coli] === T_DATETIME) {
+            datetimeformat.format(datatable, coli);
+          }
         }
       }
       done(grid);
@@ -1346,18 +1353,18 @@ var afterquery = (function() {
     enqueue(queue, chartops ? 'chart=' + chartops : 'view',
             function(grid, done) {
       if (grid.data.length) {
-	var doRender = function() {
-	  var wantwidth = trace ? window.innerWidth - 40 : window.innerWidth;
-	  $(el).width(wantwidth);
-	  $(el).height(window.innerHeight);
-	  options.height = window.innerHeight;
-	  t.draw(datatable, options);
-	}
-	doRender();
-	$(window).resize(function() {
-	  clearTimeout(resizeTimer);
-	  resizeTimer = setTimeout(doRender, 200);
-	});
+        var doRender = function() {
+          var wantwidth = trace ? window.innerWidth - 40 : window.innerWidth;
+          $(el).width(wantwidth);
+          $(el).height(window.innerHeight);
+          options.height = window.innerHeight;
+          t.draw(datatable, options);
+        }
+        doRender();
+        $(window).resize(function() {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(doRender, 200);
+        });
       } else {
         el.innerHTML = 'Empty dataset.';
       }
