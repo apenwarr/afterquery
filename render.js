@@ -1248,13 +1248,7 @@ var afterquery = (function() {
     var gridoptions = {
       intensify: intensify
     };
-
-    var el;
-    if (chartops) {
-      el = document.getElementById('vizchart');
-    } else {
-      el = document.getElementById('viztable');
-    }
+    var el = document.getElementById('vizchart');
 
     enqueue(queue, 'gentable', function(grid, done) {
       if (chartops) {
@@ -1435,7 +1429,6 @@ var afterquery = (function() {
         return func.apply(null, pre_args.concat(post_args));
       } catch (e) {
         $('#vizchart').hide();
-        $('#viztable').hide();
         $('#vizstatus').css('position', 'relative');
         $('.vizstep').show();
         err(e);
