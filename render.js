@@ -1239,7 +1239,7 @@ var afterquery = (function() {
   function addRenderers(queue, args) {
     var trace = args.get('trace');
     var chartops = args.get('chart');
-    var t, datatable;
+    var t, datatable, resizeTimer;
     var options = {};
     var intensify = args.get('intensify');
     if (intensify == '') {
@@ -1248,6 +1248,13 @@ var afterquery = (function() {
     var gridoptions = {
       intensify: intensify
     };
+
+    var el;
+    if (chartops) {
+      el = document.getElementById('vizchart');
+    } else {
+      el = document.getElementById('viztable');
+    }
 
     enqueue(queue, 'gentable', function(grid, done) {
       if (chartops) {
@@ -1262,7 +1269,6 @@ var afterquery = (function() {
           grid = fillNullsWithZero(grid);
         }
         grid = limitDecimalPrecision(grid);
-        var el = document.getElementById('vizchart');
         if (args.get('title')) {
           options.title = args.get('title');
         }
@@ -1316,19 +1322,14 @@ var afterquery = (function() {
         } else {
           throw new Error('unknown chart type "' + charttype + '"');
         }
-        $(el).height(window.innerHeight);
         gridoptions.show_only_lastseg = true;
         gridoptions.bool_to_num = true;
       } else {
-        var el = document.getElementById('viztable');
         t = new google.visualization.Table(el);
         gridoptions.allowHtml = true;
         options.allowHtml = true;
       }
       datatable = dataToGvizTable(grid, gridoptions);
-
-      var wantwidth = trace ? window.innerWidth - 40 : window.innerWidth;
-      $(el).width(wantwidth);
 
       var dateformat = new google.visualization.DateFormat({
         pattern: 'yyyy-MM-dd'
@@ -1349,9 +1350,19 @@ var afterquery = (function() {
     enqueue(queue, chartops ? 'chart=' + chartops : 'view',
             function(grid, done) {
       if (grid.data.length) {
-        t.draw(datatable, options);
+	var doRender = function() {
+	  var wantwidth = trace ? window.innerWidth - 40 : window.innerWidth;
+	  $(el).width(wantwidth);
+	  $(el).height(window.innerHeight);
+	  options.height = window.innerHeight;
+	  t.draw(datatable, options);
+	}
+	doRender();
+	$(window).resize(function() {
+	  clearTimeout(resizeTimer);
+	  resizeTimer = setTimeout(doRender, 200);
+	});
       } else {
-        var el = document.getElementById('vizchart');
         el.innerHTML = 'Empty dataset.';
       }
       done(grid);
