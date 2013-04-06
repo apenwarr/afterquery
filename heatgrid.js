@@ -29,7 +29,7 @@ var HeatGrid = function(el) {
   var gradient = function(mincolor, zerocolor, maxcolor,
                           ofs) {
     if (ofs == 0) {
-      return [zerocolor[0], zerocolor[1], zerocolor[2], 0];
+      return zerocolor;
     } else if (ofs < 0) {
       return [frac(zerocolor[0], mincolor[0], -ofs/3),
               frac(zerocolor[1], mincolor[1], -ofs/3),
@@ -136,6 +136,7 @@ var HeatGrid = function(el) {
       }
     }
     var stddev = Math.sqrt(tdiff / count);
+    console.debug('total,count,mean,stddev = ', total, count, avg, stddev);
 
     var img = ctx.createImageData(xsize, ysize);
     for (var y = 0; y < grid.data.length; y++) {
@@ -143,9 +144,9 @@ var HeatGrid = function(el) {
         if (grid.types[x] != 'number') continue;
         var cell = parseFloat(grid.data[y][x]);
         if (isNaN(cell)) continue;
-        var color = gradient(//[255,0,0], [192,192,192], [0,0,255],
-                             [192,192,192], [192,192,255], [0,0,255],
-                             (cell - avg) / stddev);
+        var ofs = stddev ? (cell - avg) / stddev : 3;
+        var color = gradient([192,192,192], [192,192,255], [0,0,255], ofs);
+        if (!color) continue;
         var pix = (y * xsize + x*xmult) * 4;
         for (var i = 0; i < xmult; i++) {
           img.data[pix + 0] = color[0];
