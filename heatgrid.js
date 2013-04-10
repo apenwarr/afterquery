@@ -18,40 +18,36 @@
 var HeatGrid = function(el) {
   this.el = $(el);
 
-  var rgb = function(r, g, b) {
-    return 'rgb(' + parseInt(r) + ',' + parseInt(g) + ',' + parseInt(b) + ')';
-  }
-
   var frac = function(minval, maxval, fraction) {
     return minval + fraction * (maxval - minval);
-  }
+  };
 
   var gradient = function(mincolor, zerocolor, maxcolor,
                           ofs) {
     if (ofs == 0) {
       return zerocolor;
     } else if (ofs < 0) {
-      return [frac(zerocolor[0], mincolor[0], -ofs/3),
-              frac(zerocolor[1], mincolor[1], -ofs/3),
-              frac(zerocolor[2], mincolor[2], -ofs/3)];
+      return [frac(zerocolor[0], mincolor[0], -ofs / 2),
+              frac(zerocolor[1], mincolor[1], -ofs / 2),
+              frac(zerocolor[2], mincolor[2], -ofs / 2)];
     } else if (ofs > 0) {
-      return [frac(zerocolor[0], maxcolor[0], ofs/3),
-              frac(zerocolor[1], maxcolor[1], ofs/3),
-              frac(zerocolor[2], maxcolor[2], ofs/3)];
+      return [frac(zerocolor[0], maxcolor[0], ofs / 2),
+              frac(zerocolor[1], maxcolor[1], ofs / 2),
+              frac(zerocolor[2], maxcolor[2], ofs / 2)];
     }
-  }
+  };
 
   this.draw = function(grid) {
     console.debug('heatgrid.draw', grid);
     this.el.html('<div id="heatgrid" tabindex=0><canvas></canvas>' +
-		 '<div id="heatgrid-popover"></div>' +
-		 '<div id="heatgrid-highlight"></div></div>');
+                 '<div id="heatgrid-popover"></div>' +
+                 '<div id="heatgrid-highlight"></div></div>');
     var heatgrid = this.el.find('#heatgrid');
     heatgrid.css({
       position: 'relative',
       overflow: 'scroll',
       width: '100%',
-      height: '100%',
+      height: '100%'
     });
     var popover = this.el.find('#heatgrid-popover');
     popover.css({
@@ -63,12 +59,12 @@ var HeatGrid = function(el) {
     var highlight = this.el.find('#heatgrid-highlight');
     highlight.css({
       position: 'absolute',
-	  //background: 'rgba(255,192,192,16)',
+          //background: 'rgba(255,192,192,16)',
       width: '3px',
       height: '3px',
       margin: '0',
       padding: '0',
-      border: '1px solid red',
+      border: '1px solid red'
     });
     var canvas = this.el.find('canvas');
     var xmult = parseInt(1000 / grid.headers.length);
@@ -111,26 +107,26 @@ var HeatGrid = function(el) {
       var cy = y / grid.data.length * canvas.height();
       highlight.css({left: cx - 2, top: cy - 2});
       if (cx < canvas.width() / 2) {
-	popover.css({
-	  left: cx + 30,
-	  right: 'auto'
-	});
+        popover.css({
+          left: cx + 30,
+          right: 'auto'
+        });
       } else {
-	popover.css({
-	  left: 'auto',
-	  right: heatgrid[0].clientWidth - cx + 10
-	});
+        popover.css({
+          left: 'auto',
+          right: heatgrid[0].clientWidth - cx + 10
+        });
       }
       if (cy < canvas.height() / 2) {
-	popover.css({
-	  top: cy + 10,
-	  bottom: 'auto'
-	});
+        popover.css({
+          top: cy + 10,
+          bottom: 'auto'
+        });
       } else {
-	popover.css({
-	  top: 'auto',
-	  bottom: heatgrid[0].clientHeight - cy + 10
-	});
+        popover.css({
+          top: 'auto',
+          bottom: heatgrid[0].clientHeight - cy + 10
+        });
       }
       popover.text(info.join('\n'));
     };
@@ -144,15 +140,15 @@ var HeatGrid = function(el) {
     });
     heatgrid.keydown(function(ev) {
       if (ev.which == 38) { // up
-	movefunc(lastPos.x, lastPos.y - 1);
+        movefunc(lastPos.x, lastPos.y - 1);
       } else if (ev.which == 40) { // down
-	movefunc(lastPos.x, lastPos.y + 1);
+        movefunc(lastPos.x, lastPos.y + 1);
       } else if (ev.which == 37) { // left
-	movefunc(lastPos.x - 1, lastPos.y);
+        movefunc(lastPos.x - 1, lastPos.y);
       } else if (ev.which == 39) { // right
-	movefunc(lastPos.x + 1, lastPos.y);
+        movefunc(lastPos.x + 1, lastPos.y);
       } else {
-	return true; // propagate event forward
+        return true; // propagate event forward
       }
       ev.stopPropagation();
       return false;
@@ -198,9 +194,11 @@ var HeatGrid = function(el) {
         var cell = parseFloat(grid.data[y][x]);
         if (isNaN(cell)) continue;
         var ofs = stddev ? (cell - avg) / stddev : 3;
-        var color = gradient([192,192,192], [192,192,255], [0,0,255], ofs);
+        var color = gradient([192, 192, 192],
+                             [192, 192, 255],
+                             [0, 0, 255], ofs);
         if (!color) continue;
-        var pix = (y * xsize + x*xmult) * 4;
+        var pix = (y * xsize + x * xmult) * 4;
         for (var i = 0; i < xmult; i++) {
           img.data[pix + 0] = color[0];
           img.data[pix + 1] = color[1];
@@ -211,5 +209,5 @@ var HeatGrid = function(el) {
       }
     }
     ctx.putImageData(img, 0, 0);
-  }
+  };
 };
