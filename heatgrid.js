@@ -43,8 +43,9 @@ var HeatGrid = function(el) {
 
   this.draw = function(grid) {
     console.debug('heatgrid.draw', grid);
-    this.el.html('<div id="heatgrid"><canvas></canvas>' +
-                 '<div id="heatgrid-popover"></div></div>');
+    this.el.html('<div id="heatgrid" tabindex=0><canvas></canvas>' +
+		 '<div id="heatgrid-popover"></div>' +
+		 '<div id="heatgrid-highlight"></div></div>');
     var heatgrid = this.el.find('#heatgrid');
     heatgrid.css({
       position: 'relative',
@@ -55,10 +56,19 @@ var HeatGrid = function(el) {
     var popover = this.el.find('#heatgrid-popover');
     popover.css({
       position: 'absolute',
-      top: 0, left: 0,
       background: '#aaa',
       border: '1px dotted black',
       'white-space': 'pre'
+    });
+    var highlight = this.el.find('#heatgrid-highlight');
+    highlight.css({
+      position: 'absolute',
+	  //background: 'rgba(255,192,192,16)',
+      width: '3px',
+      height: '3px',
+      margin: '0',
+      padding: '0',
+      border: '1px solid red',
     });
     var canvas = this.el.find('canvas');
     var xmult = parseInt(1000 / grid.headers.length);
@@ -69,7 +79,7 @@ var HeatGrid = function(el) {
     canvas.css({
       background: '#fff',
       width: '100%',
-      height: ysize //'100%',
+      height: ysize
     });
     console.debug('heatgrid canvas size is: x y =', xsize, ysize);
     var ctx = canvas[0].getContext('2d');
@@ -78,11 +88,14 @@ var HeatGrid = function(el) {
       return;
     }
 
-    // TODO(apenwarr): offsetX/Y are flakey, use something else
-    var movefunc = function(offX, offY) {
-      var x = parseInt(offX / canvas.width() * grid.headers.length);
-      var y = parseInt(offY / canvas.height() * grid.data.length);
-      if (x > grid.headers.length || y > grid.data.length) return;
+    var lastPos = { x: 0, y: 0 };
+    var movefunc = function(x, y) {
+      if (x >= grid.headers.length) x = grid.headers.length - 1;
+      if (y >= grid.data.length) y = grid.data.length - 1;
+      if (x < 0) x = 0;
+      if (y < 0) y = 0;
+      lastPos.x = x;
+      lastPos.y = y;
       var info = [];
       for (var i = 0; i < grid.headers.length; i++) {
         if (grid.types[i] != 'number') {
@@ -94,23 +107,63 @@ var HeatGrid = function(el) {
       info.push(grid.headers[x]);
       info.push('value=' + grid.data[y][x]);
 
-      popover.css({
-        left: (x + 0.4) / grid.headers.length * canvas.width(),
-        top: (y + 0.4) / grid.data.length * canvas.height(),
-      });
+      var cx = x / grid.headers.length * canvas.width();
+      var cy = y / grid.data.length * canvas.height();
+      highlight.css({left: cx - 2, top: cy - 2});
+      if (cx < canvas.width() / 2) {
+	popover.css({
+	  left: cx + 30,
+	  right: 'auto'
+	});
+      } else {
+	popover.css({
+	  left: 'auto',
+	  right: heatgrid[0].clientWidth - cx + 10
+	});
+      }
+      if (cy < canvas.height() / 2) {
+	popover.css({
+	  top: cy + 10,
+	  bottom: 'auto'
+	});
+      } else {
+	popover.css({
+	  top: 'auto',
+	  bottom: heatgrid[0].clientHeight - cy + 10
+	});
+      }
       popover.text(info.join('\n'));
     };
     heatgrid.mousemove(function(ev) {
       var pos = canvas.position();
-      movefunc(ev.pageX - pos.left, ev.pageY - pos.top);
+      var offX = ev.pageX - pos.left - 1;
+      var offY = ev.pageY - pos.top - 1;
+      var x = parseInt(offX / canvas.width() * grid.headers.length);
+      var y = parseInt(offY / canvas.height() * grid.data.length);
+      movefunc(x, y);
+    });
+    heatgrid.keydown(function(ev) {
+      if (ev.which == 38) { // up
+	movefunc(lastPos.x, lastPos.y - 1);
+      } else if (ev.which == 40) { // down
+	movefunc(lastPos.x, lastPos.y + 1);
+      } else if (ev.which == 37) { // left
+	movefunc(lastPos.x - 1, lastPos.y);
+      } else if (ev.which == 39) { // right
+	movefunc(lastPos.x + 1, lastPos.y);
+      } else {
+	return true; // propagate event forward
+      }
+      ev.stopPropagation();
+      return false;
     });
     heatgrid.mouseleave(function() {
       popover.hide();
     });
     heatgrid.mouseenter(function() {
+      heatgrid.focus(); // so that keyboard bindings work
       popover.show();
     });
-
 
     var total = 0, count = 0;
     for (var y = 0; y < grid.data.length; y++) {
