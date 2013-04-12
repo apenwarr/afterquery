@@ -109,6 +109,35 @@ wvtest('dataToGvizTable', function() {
 });
 
 
+wvtest('delta', function() {
+  var grid = {
+    headers: ['a', 'b'],
+    types: ['number', 'number'],
+    data: [
+      [0, 1],
+      [5, 7],
+      [30, 1],
+      [2, 1],
+      [2, 1],
+    ]
+  };
+  var dt = afterquery.internal.deltaBy(grid, 'a');
+  dump(dt);
+  WVPASSEQ(dt.data.length, 5);
+  WVPASSEQ(dt.data[0][0], 0);
+  WVPASSEQ(dt.data[0][1], 1);
+  WVPASSEQ(dt.data[1][0], 5);
+  WVPASSEQ(dt.data[1][1], 7);
+  WVPASSEQ(dt.data[2][0], 25);
+  WVPASSEQ(dt.data[2][1], 1);
+  WVPASSEQ(dt.data[3][0], 2);
+  WVPASSEQ(dt.data[3][1], 1);
+  WVPASSEQ(dt.data[4][0], undefined);
+  WVPASSEQ(dt.data[4][1], 1);
+});
+
+
+
 wvtest('guessTypes', function() {
   var data1 = [['1999-01-01', '1999-02-02', 1, 2.5, false, 'foo']];
   var data2 = [['1999-01-01', '1999-02-02 12:34', 2, 'x', true, null]];
