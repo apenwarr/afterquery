@@ -974,6 +974,61 @@ var afterquery = (function() {
   }
 
 
+  function deltaBy(ingrid, keys) {
+    var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
+    for (var rowi = 0; rowi < ingrid.data.length; rowi++) {
+      var row = ingrid.data[rowi];
+      outgrid.data.push(row);
+    }
+
+    var keycols = [];
+    for (var keyi in keys) {
+      var key = keys[keyi];
+      keycols.push(keyToColNum(ingrid, key));
+    }
+
+    if (outgrid.data.length < 2) {
+      return outgrid;
+    }
+    for (var keyi in keycols) {
+      var keycol = keycols[keyi];
+
+      var prev_val = undefined;
+      for (var rowi = 1; rowi < outgrid.data.length; rowi++) {
+        var row = outgrid.data[rowi];
+        var val = row[keycol];
+        console.debug('prev_val: ', prev_val, ' val: ', val);
+        if (val == undefined) {
+          continue;
+        } else if (outgrid.types[keycol] === T_NUM) {
+          if (prev_val != undefined) {
+            if (val > prev_val) {
+              var new_val = val - prev_val;
+              console.debug('out: ', new_val);
+              outgrid.data[rowi][keycol] = new_val;
+            } else if (val == prev_val) {
+              console.debug('out: ', undefined);
+              outgrid.data[rowi][keycol] = undefined;
+            }
+          }
+          prev_val = val;
+        }
+      }
+    }
+
+    return outgrid;
+  }
+
+
+  function doDeltaBy(grid, argval) {
+    console.debug('deltaBy:', argval);
+    console.debug('grid:', grid);
+    grid = deltaBy(grid, argval.split(','));
+    console.debug('grid:', grid);
+    return grid;
+  }
+
+
   function orderBy(grid, keys) {
     var keycols = [];
     for (var keyi in keys) {
@@ -1229,6 +1284,8 @@ var afterquery = (function() {
         transform(doQueryBy, argval);
       } else if (argkey == 'limit') {
         transform(doLimit, argval);
+      } else if (argkey == 'delta') {
+        transform(doDeltaBy, argval);
       } else if (argkey == 'order') {
         transform(doOrderBy, argval);
       } else if (argkey == 'extract_regexp') {
@@ -1627,6 +1684,7 @@ var afterquery = (function() {
       stringifiedCols: stringifiedCols,
       filterBy: filterBy,
       queryBy: queryBy,
+      deltaBy: deltaBy,
       orderBy: orderBy,
       extractRegexp: extractRegexp,
       fillNullsWithZero: fillNullsWithZero,
