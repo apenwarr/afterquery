@@ -997,17 +997,14 @@ var afterquery = (function() {
       for (var rowi = 1; rowi < outgrid.data.length; rowi++) {
         var row = outgrid.data[rowi];
         var val = row[keycol];
-        console.debug('prev_val: ', prev_val, ' val: ', val);
         if (val == undefined) {
           continue;
         } else if (outgrid.types[keycol] === T_NUM) {
           if (prev_val != undefined) {
             if (val > prev_val) {
               var new_val = val - prev_val;
-              console.debug('out: ', new_val);
               outgrid.data[rowi][keycol] = new_val;
             } else if (val == prev_val) {
-              console.debug('out: ', undefined);
               outgrid.data[rowi][keycol] = undefined;
             }
           }
@@ -1022,7 +1019,6 @@ var afterquery = (function() {
 
   function doDeltaBy(grid, argval) {
     console.debug('deltaBy:', argval);
-    console.debug('grid:', grid);
     grid = deltaBy(grid, argval.split(','));
     console.debug('grid:', grid);
     return grid;
