@@ -462,6 +462,37 @@ var afterquery = (function() {
       return agg_funcs.sum(l) / agg_funcs.count_nz(l);
     },
 
+    // also works for non-numeric values, as long as they're sortable
+    median: function(l) {
+      var comparator = function(a, b) {
+        a = a || '0'; // ensure consistent ordering given NaN and undefined
+        b = b || '0';
+        if (a < b) {
+          return -1;
+        } else if (a > b) {
+          return 1;
+        } else {
+          return 0;
+        }
+      }
+      if (l.length > 0) {
+        l.sort(comparator);
+        return l[parseInt(l.length/2)];
+      } else {
+        return null;
+      }
+    },
+
+    stddev: function(l) {
+      var avg = agg_funcs.avg(l);
+      var sumsq = 0.0;
+      for (var i in l) {
+        var d = parseFloat(l[i]) - avg;
+        if (d) sumsq += d * d;
+      }
+      return Math.sqrt(sumsq);
+    },
+
     color: function(l) {
       for (var i in l) {
         var v = l[i];
@@ -477,6 +508,7 @@ var afterquery = (function() {
   agg_funcs.count_distinct.return_type = T_NUM;
   agg_funcs.sum.return_type = T_NUM;
   agg_funcs.avg.return_type = T_NUM;
+  agg_funcs.stddev.return_type = T_NUM;
   agg_funcs.cat.return_type = T_STRING;
   agg_funcs.color.return_type = T_NUM;
 

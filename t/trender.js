@@ -248,13 +248,20 @@ wvtest('pivot', function() {
     ['fred', 11, '2013/02/03']
   ];
   var mpd = afterquery.internal.myParseDate;
-  afterquery.exec('group=a,b;only(c),count(c)', rawdata, function(grid) {
-    WVPASSEQ(grid.headers, ['a', 'b', 'c', 'c']);
+  var dlist = [mpd('2013/01/02'), mpd('2013/01/01'), mpd('2013/02/03')];
+  afterquery.exec('group=a,b;only(c),count(c),sum(c),min(c),max(c),' +
+                  'avg(c),median(c),stddev(c)', rawdata, function(grid) {
+    WVPASSEQ(grid.headers, ['a', 'b', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c']);
     WVPASSEQ(grid.data, [
-      ['fred', 9, mpd('2013/01/02'), 1],
-      ['bob', 7, mpd('2013/01/01'), 1],
-      ['fred', 11, mpd('2013/02/03'), 1]
+      ['fred', 9, dlist[0], 1, 0, dlist[0], dlist[0], 0, dlist[0], 0],
+      ['bob', 7, dlist[1], 1, 0, dlist[1], dlist[1], 0, dlist[1], 0],
+      ['fred', 11, dlist[2], 1, 0, dlist[2], dlist[2], 0, dlist[2], 0]
     ]);
+  });
+  afterquery.exec('group=;count(b),sum(b),min(b),max(b),' +
+                  'avg(b),median(b),stddev(b)', rawdata, function(grid) {
+    WVPASSEQ(grid.headers, ['b', 'b', 'b', 'b', 'b', 'b', 'b']);
+    WVPASSEQ(grid.data, [[3, 27, 7, 11, 27.0/3.0, 9, Math.sqrt(8)]]);
   });
   afterquery.exec('pivot=a;b;only(c)', rawdata, function(grid) {
     WVPASSEQ(grid.headers, ['a', 9, 7, 11]);
@@ -265,8 +272,8 @@ wvtest('pivot', function() {
       afterquery.T_DATE
     ]);
     WVPASSEQ(grid.data, [
-      ['fred', mpd('2013/01/02'), null, mpd('2013/02/03')],
-      ['bob', null, mpd('2013/01/01'), null]
+      ['fred', dlist[0], null, dlist[2]],
+      ['bob', null, dlist[1], null]
     ]);
   });
   afterquery.exec('pivot=a;b;c', rawdata, function(grid) {
@@ -290,8 +297,8 @@ wvtest('pivot', function() {
       '11 only(c)', '11 count(c)'
     ]);
     WVPASSEQ(grid.data, [
-      ['fred', mpd('2013/01/02'), 1, null, null, mpd('2013/02/03'), 1],
-      ['bob', null, null, mpd('2013/01/01'), 1, null, null]
+      ['fred', dlist[0], 1, null, null, dlist[2], 1],
+      ['bob', null, null, dlist[1], 1, null, null]
     ]);
   });
   afterquery.exec('pivot=a;b,c;count(*)', rawdata, function(grid) {
