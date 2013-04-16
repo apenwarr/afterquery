@@ -560,7 +560,7 @@ var afterquery = (function() {
         var colkey = [];
         for (var coli in colkey_incols) {
           var colnum = colkey_incols[coli];
-          colkey.push(row[colnum]);
+          colkey.push(stringifiedCol(row[colnum], ingrid.types[colnum]));
         }
         for (var coli in valkeys) {
           var xcolkey = colkey.concat([valkeys[coli]]);
@@ -570,7 +570,7 @@ var afterquery = (function() {
             // just clutter.
             var name = valkeys.length > 1 ?
                 xcolkey.join(' ') : colkey.join(' ');
-            var colnum = keyToColNum(ingrid, valkeys[coli]);
+            var colnum = rowkeys.length + colkeys.length + parseInt(coli);
             colkey_outcols[xcolkey] = outgrid.headers.length;
             valuecols[xcolkey] = colnum;
             outgrid.headers.push(name);
@@ -590,7 +590,7 @@ var afterquery = (function() {
       var colkey = [];
       for (var coli in colkey_incols) {
         var colnum = colkey_incols[coli];
-        colkey.push(row[colnum]);
+        colkey.push(stringifiedCol(row[colnum], ingrid.types[colnum]));
       }
       for (var coli in valkeys) {
         var xcolkey = colkey.concat([valkeys[coli]]);
@@ -1443,7 +1443,7 @@ var afterquery = (function() {
           $(el).height(window.innerHeight);
           options.height = window.innerHeight;
           t.draw(datatable, options);
-        }
+        };
         doRender();
         $(window).resize(function() {
           clearTimeout(resizeTimer);
@@ -1706,6 +1706,7 @@ var afterquery = (function() {
       trySplitOne: trySplitOne,
       dataToGvizTable: dataToGvizTable,
       guessTypes: guessTypes,
+      myParseDate: myParseDate,
       groupBy: groupBy,
       pivotBy: pivotBy,
       stringifiedCols: stringifiedCols,
@@ -1722,6 +1723,11 @@ var afterquery = (function() {
       runqueue: runqueue,
       gridFromData: gridFromData
     },
+    T_NUM: T_NUM,
+    T_DATE: T_DATE,
+    T_DATETIME: T_DATETIME,
+    T_BOOL: T_BOOL,
+    T_STRING: T_STRING,
     parseArgs: parseArgs,
     exec: exec,
     render: wrap(render)

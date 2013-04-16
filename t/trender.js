@@ -239,3 +239,71 @@ wvtest('exec', function() {
     WVPASSEQ(grid.data, [[1, 1, 2]]);
   });
 });
+
+wvtest('pivot', function() {
+  var rawdata = [
+    ['a', 'b', 'c'],
+    ['fred', 9, '2013/01/02'],
+    ['bob', 7, '2013/01/01'],
+    ['fred', 11, '2013/02/03']
+  ];
+  var mpd = afterquery.internal.myParseDate;
+  afterquery.exec('group=a,b;only(c),count(c)', rawdata, function(grid) {
+    WVPASSEQ(grid.headers, ['a', 'b', 'c', 'c']);
+    WVPASSEQ(grid.data, [
+      ['fred', 9, mpd('2013/01/02'), 1],
+      ['bob', 7, mpd('2013/01/01'), 1],
+      ['fred', 11, mpd('2013/02/03'), 1]
+    ]);
+  });
+  afterquery.exec('pivot=a;b;only(c)', rawdata, function(grid) {
+    WVPASSEQ(grid.headers, ['a', 9, 7, 11]);
+    WVPASSEQ(grid.types, [
+      afterquery.T_STRING,
+      afterquery.T_DATE,
+      afterquery.T_DATE,
+      afterquery.T_DATE
+    ]);
+    WVPASSEQ(grid.data, [
+      ['fred', mpd('2013/01/02'), null, mpd('2013/02/03')],
+      ['bob', null, mpd('2013/01/01'), null]
+    ]);
+  });
+  afterquery.exec('pivot=a;b;c', rawdata, function(grid) {
+    WVPASSEQ(grid.headers, ['a', 9, 7, 11]);
+    WVPASSEQ(grid.types, [
+      afterquery.T_STRING,
+      afterquery.T_NUM,
+      afterquery.T_NUM,
+      afterquery.T_NUM
+    ]);
+    WVPASSEQ(grid.data, [
+      ['fred', 1, null, 1],
+      ['bob', null, 1, null]
+    ]);
+  });
+  afterquery.exec('pivot=a;b;only(c),count(c)', rawdata, function(grid) {
+    WVPASSEQ(grid.headers, [
+      'a',
+      '9 only(c)', '9 count(c)',
+      '7 only(c)', '7 count(c)',
+      '11 only(c)', '11 count(c)'
+    ]);
+    WVPASSEQ(grid.data, [
+      ['fred', mpd('2013/01/02'), 1, null, null, mpd('2013/02/03'), 1],
+      ['bob', null, null, mpd('2013/01/01'), 1, null, null]
+    ]);
+  });
+  afterquery.exec('pivot=a;b,c;count(*)', rawdata, function(grid) {
+    WVPASSEQ(grid.headers, [
+      'a',
+      '9 2013-01-02',
+      '7 2013-01-01',
+      '11 2013-02-03'
+    ]);
+    WVPASSEQ(grid.data, [
+      ['fred', 1, null, 1],
+      ['bob', null, 1, null]
+    ]);
+  });
+});
