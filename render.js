@@ -283,6 +283,28 @@ var afterquery = (function() {
   }
 
 
+  function zpad(n) {
+    var s = '' + n;
+    if (s.length < 2) s = '0' + s;
+    return s;
+  }
+
+
+  function dateToStr(d) {
+    return (d.getFullYear() + '-' +
+            zpad(d.getMonth() + 1) + '-' +
+            zpad(d.getDate()));
+  }
+
+
+  function dateTimeToStr(d) {
+    return (dateToStr(d) + ' ' +
+            zpad(d.getHours()) + ':' +
+            zpad(d.getMinutes()) + ':' +
+            zpad(d.getSeconds()));
+  }
+
+
   function parseDates(data, types) {
     for (var coli in types) {
       var type = types[coli];
@@ -583,16 +605,21 @@ var afterquery = (function() {
   }
 
 
+  function stringifiedCol(value, typ) {
+    if (typ === T_DATE) {
+      return dateToStr(value) || '';
+    } else if (typ === T_DATETIME) {
+      return dateTimeToStr(value) || '';
+    } else {
+      return (value + '') || '(none)';
+    }
+  }
+
+
   function stringifiedCols(row, types) {
     var out = [];
     for (var coli in types) {
-      if (types[coli] === T_DATE) {
-        out.push(row[coli].strftime('%Y-%m-%d') || '');
-      } else if (types[coli] === T_DATETIME) {
-        out.push(row[coli].strftime('%Y-%m-%d %H:%M:%S') || '');
-      } else {
-        out.push((row[coli] + '') || '(none)');
-      }
+      out.push(stringifiedCol(row[coli], types[coli]));
     }
     return out;
   }
