@@ -138,6 +138,46 @@ wvtest('delta', function() {
 
 
 
+wvtest('unselect', function() {
+  var grid = {
+    headers: ['a', 'b', 'c'],
+    types: ['number', 'number', 'number'],
+    data: [
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9],
+      [10, 11, 12],
+      [13, 14, 15],
+    ]
+  };
+  var dt = afterquery.internal.unselectBy(grid, 'b');
+  dump(dt);
+  WVPASSEQ(dt.headers.length, 2);
+  WVPASSEQ(dt.headers[0], 'a');
+  WVPASSEQ(dt.headers[1], 'c');
+  WVPASSEQ(dt.types.length, 2);
+  WVPASSEQ(dt.types[0], 'number');
+  WVPASSEQ(dt.types[1], 'number');
+  WVPASSEQ(dt.data.length, 5);
+  WVPASSEQ(dt.data[0].length, 2);
+  WVPASSEQ(dt.data[0][0], 1);
+  WVPASSEQ(dt.data[0][1], 3);
+  WVPASSEQ(dt.data[1].length, 2);
+  WVPASSEQ(dt.data[1][0], 4);
+  WVPASSEQ(dt.data[1][1], 6);
+  WVPASSEQ(dt.data[2].length, 2);
+  WVPASSEQ(dt.data[2][0], 7);
+  WVPASSEQ(dt.data[2][1], 9);
+  WVPASSEQ(dt.data[3].length, 2);
+  WVPASSEQ(dt.data[3][0], 10);
+  WVPASSEQ(dt.data[3][1], 12);
+  WVPASSEQ(dt.data[4].length, 2);
+  WVPASSEQ(dt.data[4][0], 13);
+  WVPASSEQ(dt.data[4][1], 15);
+});
+
+
+
 wvtest('guessTypes', function() {
   var data1 = [['1999-01-01', '1999-02-02', 1, 2.5, false, 'foo']];
   var data2 = [['1999-01-01', '1999-02-02 12:34', 2, 'x', true, null]];
