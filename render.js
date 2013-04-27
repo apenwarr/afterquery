@@ -283,6 +283,28 @@ var afterquery = (function() {
   }
 
 
+  function zpad(n) {
+    var s = '' + n;
+    if (s.length < 2) s = '0' + s;
+    return s;
+  }
+
+
+  function dateToStr(d) {
+    return (d.getFullYear() + '-' +
+            zpad(d.getMonth() + 1) + '-' +
+            zpad(d.getDate()));
+  }
+
+
+  function dateTimeToStr(d) {
+    return (dateToStr(d) + ' ' +
+            zpad(d.getHours()) + ':' +
+            zpad(d.getMinutes()) + ':' +
+            zpad(d.getSeconds()));
+  }
+
+
   function parseDates(data, types) {
     for (var coli in types) {
       var type = types[coli];
@@ -440,6 +462,37 @@ var afterquery = (function() {
       return agg_funcs.sum(l) / agg_funcs.count_nz(l);
     },
 
+    // also works for non-numeric values, as long as they're sortable
+    median: function(l) {
+      var comparator = function(a, b) {
+        a = a || '0'; // ensure consistent ordering given NaN and undefined
+        b = b || '0';
+        if (a < b) {
+          return -1;
+        } else if (a > b) {
+          return 1;
+        } else {
+          return 0;
+        }
+      }
+      if (l.length > 0) {
+        l.sort(comparator);
+        return l[parseInt(l.length/2)];
+      } else {
+        return null;
+      }
+    },
+
+    stddev: function(l) {
+      var avg = agg_funcs.avg(l);
+      var sumsq = 0.0;
+      for (var i in l) {
+        var d = parseFloat(l[i]) - avg;
+        if (d) sumsq += d * d;
+      }
+      return Math.sqrt(sumsq);
+    },
+
     color: function(l) {
       for (var i in l) {
         var v = l[i];
@@ -455,6 +508,7 @@ var afterquery = (function() {
   agg_funcs.count_distinct.return_type = T_NUM;
   agg_funcs.sum.return_type = T_NUM;
   agg_funcs.avg.return_type = T_NUM;
+  agg_funcs.stddev.return_type = T_NUM;
   agg_funcs.cat.return_type = T_STRING;
   agg_funcs.color.return_type = T_NUM;
 
@@ -538,7 +592,7 @@ var afterquery = (function() {
         var colkey = [];
         for (var coli in colkey_incols) {
           var colnum = colkey_incols[coli];
-          colkey.push(row[colnum]);
+          colkey.push(stringifiedCol(row[colnum], ingrid.types[colnum]));
         }
         for (var coli in valkeys) {
           var xcolkey = colkey.concat([valkeys[coli]]);
@@ -548,7 +602,7 @@ var afterquery = (function() {
             // just clutter.
             var name = valkeys.length > 1 ?
                 xcolkey.join(' ') : colkey.join(' ');
-            var colnum = keyToColNum(ingrid, valkeys[coli]);
+            var colnum = rowkeys.length + colkeys.length + parseInt(coli);
             colkey_outcols[xcolkey] = outgrid.headers.length;
             valuecols[xcolkey] = colnum;
             outgrid.headers.push(name);
@@ -568,7 +622,7 @@ var afterquery = (function() {
       var colkey = [];
       for (var coli in colkey_incols) {
         var colnum = colkey_incols[coli];
-        colkey.push(row[colnum]);
+        colkey.push(stringifiedCol(row[colnum], ingrid.types[colnum]));
       }
       for (var coli in valkeys) {
         var xcolkey = colkey.concat([valkeys[coli]]);
@@ -583,16 +637,21 @@ var afterquery = (function() {
   }
 
 
+  function stringifiedCol(value, typ) {
+    if (typ === T_DATE) {
+      return dateToStr(value) || '';
+    } else if (typ === T_DATETIME) {
+      return dateTimeToStr(value) || '';
+    } else {
+      return (value + '') || '(none)';
+    }
+  }
+
+
   function stringifiedCols(row, types) {
     var out = [];
     for (var coli in types) {
-      if (types[coli] === T_DATE) {
-        out.push(row[coli].strftime('%Y-%m-%d') || '');
-      } else if (types[coli] === T_DATETIME) {
-        out.push(row[coli].strftime('%Y-%m-%d %H:%M:%S') || '');
-      } else {
-        out.push((row[coli] + '') || '(none)');
-      }
+      out.push(stringifiedCol(row[coli], types[coli]));
     }
     return out;
   }
@@ -1412,7 +1471,7 @@ var afterquery = (function() {
           $(el).height(window.innerHeight);
           options.height = window.innerHeight;
           t.draw(datatable, options);
-        }
+        };
         doRender();
         $(window).resize(function() {
           clearTimeout(resizeTimer);
@@ -1675,6 +1734,7 @@ var afterquery = (function() {
       trySplitOne: trySplitOne,
       dataToGvizTable: dataToGvizTable,
       guessTypes: guessTypes,
+      myParseDate: myParseDate,
       groupBy: groupBy,
       pivotBy: pivotBy,
       stringifiedCols: stringifiedCols,
@@ -1691,6 +1751,11 @@ var afterquery = (function() {
       runqueue: runqueue,
       gridFromData: gridFromData
     },
+    T_NUM: T_NUM,
+    T_DATE: T_DATE,
+    T_DATETIME: T_DATETIME,
+    T_BOOL: T_BOOL,
+    T_STRING: T_STRING,
     parseArgs: parseArgs,
     exec: exec,
     render: wrap(render)
