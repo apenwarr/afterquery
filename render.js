@@ -1084,6 +1084,43 @@ var afterquery = (function() {
   }
 
 
+  function unselectBy(ingrid, keys) {
+    var outgrid = {headers: [], data: [], types: []};
+    var keycols = [];
+    for (var keyi in keys) {
+      var key = keys[keyi];
+      keycols.push(keyToColNum(ingrid, key));
+    }
+
+    for (var headi = 0; headi < ingrid.headers.length; headi++) {
+      if (!(headi in keycols)) {
+        outgrid.headers.push(ingrid.headers[headi]);
+        outgrid.types.push(ingrid.types[headi]);
+      }
+    }
+    for (var rowi = 0; rowi < ingrid.data.length; rowi++) {
+      var row = ingrid.data[rowi];
+      var newrow = [];
+      for (var coli = 0; coli < row.length; coli++) {
+        if (!(coli in keycols)) {
+          newrow.push(row[coli]);
+        }
+      }
+      outgrid.data.push(newrow);
+    }
+
+    return outgrid;
+  }
+
+
+  function doUnselectBy(grid, argval) {
+    console.debug('unselectBy:', argval);
+    grid = unselectBy(grid, argval.split(','));
+    console.debug('grid:', grid);
+    return grid;
+  }
+
+
   function orderBy(grid, keys) {
     var keycols = [];
     for (var keyi in keys) {
@@ -1341,6 +1378,8 @@ var afterquery = (function() {
         transform(doLimit, argval);
       } else if (argkey == 'delta') {
         transform(doDeltaBy, argval);
+      } else if (argkey == 'unselect') {
+        transform(doUnselectBy, argval);
       } else if (argkey == 'order') {
         transform(doOrderBy, argval);
       } else if (argkey == 'extract_regexp') {
@@ -1741,6 +1780,7 @@ var afterquery = (function() {
       filterBy: filterBy,
       queryBy: queryBy,
       deltaBy: deltaBy,
+      unselectBy: unselectBy,
       orderBy: orderBy,
       extractRegexp: extractRegexp,
       fillNullsWithZero: fillNullsWithZero,
