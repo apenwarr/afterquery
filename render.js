@@ -921,18 +921,18 @@ var afterquery = (function() {
     var wantvals = [];
     for (var valuei in values) {
       if (ingrid.types[keycol] === T_NUM) {
-        wantvals.push(parseFloat(values[valuei]));
+        wantvals.push(parseFloat(values[valuei]).toString());
       } else if (ingrid.types[keycol] === T_DATE ||
                  ingrid.types[keycol] === T_DATETIME) {
-        wantvals.push(myParseDate(values[valuei]));
+        wantvals.push(myParseDate(values[valuei]).toString());
       } else {
-        wantvals.push(values[valuei]);
+        wantvals.push(values[valuei].toString());
       }
     }
 
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
-      var cell = row[keycol];
+      var cell = row[keycol].toString();
       if (cell == undefined) {
         cell = null;
       }
