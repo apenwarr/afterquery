@@ -921,20 +921,24 @@ var afterquery = (function() {
     var wantvals = [];
     for (var valuei in values) {
       if (ingrid.types[keycol] === T_NUM) {
-        wantvals.push(parseFloat(values[valuei]).toString());
+        wantvals.push(parseFloat(values[valuei]));
       } else if (ingrid.types[keycol] === T_DATE ||
                  ingrid.types[keycol] === T_DATETIME) {
-        wantvals.push(myParseDate(values[valuei]).toString());
+        wantvals.push(dateTimeToStr(myParseDate(values[valuei])));
       } else {
-        wantvals.push(values[valuei].toString());
+        wantvals.push(values[valuei]);
       }
     }
 
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
-      var cell = row[keycol].toString();
+      var cell = row[keycol];
       if (cell == undefined) {
         cell = null;
+      }
+      var keytype = ingrid.types[keycol];
+      if (keytype == T_DATE || keytype == T_DATETIME) {
+        cell = dateTimeToStr(cell);
       }
       var found = 0;
       for (var valuei in wantvals) {

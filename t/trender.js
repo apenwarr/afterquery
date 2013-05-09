@@ -265,16 +265,19 @@ wvtest('filter', function() {
   var rawdata = [
     ['a', 'b', 'c'],
     ['2013/01/02', '2', 3],
-    ['1977/11/14', '3.5', 1]
+    ['2013/04/14', '3.5', 1]
   ];
   afterquery.exec('filter=b=2', rawdata, function(grid) {
     WVPASSEQ(grid.data, [[new Date(2013,0,2), 2, 3]]);
   });
-  afterquery.exec('filter=a=1977-11-14', rawdata, function(grid) {
-    WVPASSEQ(grid.data, [[new Date(1977,10,14), 3.5, 1]]);
+  afterquery.exec('filter=a=2013-4-14', rawdata, function(grid) {
+    WVPASSEQ(grid.data, [[new Date(2013,3,14), 3.5, 1]]);
   });
-  afterquery.exec('filter=a>1977-11-14', rawdata, function(grid) {
+  afterquery.exec('filter=a<2013-04-14', rawdata, function(grid) {
     WVPASSEQ(grid.data, [[new Date(2013,0,2), 2, 3]]);
+  });
+  afterquery.exec('filter=a>2013-01-02', rawdata, function(grid) {
+    WVPASSEQ(grid.data, [[new Date(2013,3,14), 3.5, 1]]);
   });
 });
 
