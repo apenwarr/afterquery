@@ -1640,17 +1640,20 @@ var afterquery = (function() {
 
   function getUrlData(url, success_func, error_func) {
     console.debug('fetching data url:', url);
-    var successfunc_called;
 
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
 
     iframe.onload = function() {
-      // the default jsonp callback
-      iframe.contentWindow.jsonp = function(data) {
+      var successfunc_called;
+      var real_success_func = function(data) {
+        console.debug('calling success_func');
         success_func(data);
         successfunc_called = true;
       }
+
+      // the default jsonp callback
+      iframe.contentWindow.jsonp = real_success_func;
 
       // a callback the jsonp can execute if oauth2 authentication is needed
       iframe.contentWindow.tryOAuth2 = function(oauth2_url) {
@@ -1690,6 +1693,7 @@ var afterquery = (function() {
                          encodeURI(hostpart) +
                          '</b> - sorry.');
         }
+        successfunc_called = true;  // needing oauth2 is "success" in that we know what's up
       };
 
       // some services are hardcoded to use the gviz callback, so
@@ -1697,7 +1701,7 @@ var afterquery = (function() {
       iframe.contentWindow.google = {
         visualization: {
           Query: {
-            setResponse: success_func
+            setResponse: real_success_func
           }
         }
       };
