@@ -1640,13 +1640,17 @@ var afterquery = (function() {
 
   function getUrlData(url, success_func, error_func) {
     console.debug('fetching data url:', url);
+    var successfunc_called;
 
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
 
     iframe.onload = function() {
       // the default jsonp callback
-      iframe.contentWindow.jsonp = success_func;
+      iframe.contentWindow.jsonp = function(data) {
+        success_func(data);
+        successfunc_called = true;
+      }
 
       // a callback the jsonp can execute if oauth2 authentication is needed
       iframe.contentWindow.tryOAuth2 = function(oauth2_url) {
@@ -1699,8 +1703,17 @@ var afterquery = (function() {
       };
 
       iframe.contentWindow.onerror = function(message, xurl, lineno) {
-        err(null, message + ' url=' + xurl + ' line=' + lineno);
+        err(message + ' url=' + xurl + ' line=' + lineno);
       };
+
+      iframe.contentWindow.onpostscript = function() {
+        if (successfunc_called) {
+          console.debug('json load was successful.');
+        } else {
+          err('Error loading data; check javascript console for details.');
+          err('<a href="' + encodeURI(url) + '">' + encodeURI(url) + '</a>');
+        }
+      }
 
       iframe.contentWindow.jsonp_url = url;
 
@@ -1710,10 +1723,17 @@ var afterquery = (function() {
       //  localStorage, set cookies, etc.  We can use the new html5 postMessage
       //  feature to safely send json data from the iframe back to us.
       // ...but for the moment we have to trust the data provider.
+      //TODO(apenwarr): at that time, make this script.async=1 and run postscript from there.
+
       var script = iframe.contentDocument.createElement('script');
-      script.async = 1;
+      script.async = false;
       script.src = url;
       iframe.contentDocument.body.appendChild(script);
+
+      var postscript = iframe.contentDocument.createElement('script');
+      postscript.async = false;
+      postscript.src = 'postscript.js';
+      iframe.contentDocument.body.appendChild(postscript);
     };
     document.body.appendChild(iframe);
   }

@@ -74,10 +74,13 @@
 <body>
 
 <div id='editmenu'><a id='editlink' href='' target='_top'>edit</a></div>
-<div id='vizstatus'><div id='statustext'></div><div id='statussub'></div></div>
+<div id='vizstatus'>
+  <div id='statustext'></div>
+  <div id='statussub'></div>
+  <div id='vizlog'></div>
+</div>
 <div id='vizraw'></div>
 <div id='vizchart'></div>
-<div id='vizlog'></div>
 
 <script>
 $('#editlink').attr('href', '/edit' + window.location.search);
