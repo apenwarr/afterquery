@@ -1642,9 +1642,30 @@ var afterquery = (function() {
   }
 
 
-  function getUrlData(url, success_func, error_func) {
-    console.debug('fetching data url:', url);
+  function extractJsonFromJsonp(text, success_func) {
+    var data = text.trim();
+    var start = data.indexOf('jsonp(');
+    if (start >= 0) {
+      data = data.substr(start + 6, data.length - start - 6 - 2)
+    }
+    data = JSON.parse(data);
+    success_func(data);
+  }
 
+
+  function getUrlData_xhr(url, success_func, error_func) {
+    jQuery.support.cors = true;
+    jQuery.ajax(url, {
+      headers: { 'X-DataSource-Auth': 'a' },
+      xhrFields: { withCredentials: true },
+      dataType: 'text',
+      success: function(text) { extractJsonFromJsonp(text, success_func); },
+      error: error_func
+    });
+  }
+
+
+  function getUrlData_jsonp(url, success_func, error_func) {
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
 
@@ -1744,6 +1765,17 @@ var afterquery = (function() {
       iframe.contentDocument.body.appendChild(postscript);
     };
     document.body.appendChild(iframe);
+  }
+
+
+  function getUrlData(url, success_func, error_func) {
+    console.debug('fetching data url:', url);
+    var onError = function(xhr, msg) {
+      console.debug('xhr returned error:', msg);
+      console.debug('(trying jsonp instead)');
+      getUrlData_jsonp(url, success_func, error_func);
+    }
+    getUrlData_xhr(url, success_func, onError);
   }
 
 
