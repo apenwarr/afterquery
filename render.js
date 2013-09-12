@@ -1784,6 +1784,7 @@ var afterquery = (function() {
       var url = args.get('url');
       console.debug('original data url:', url);
       if (!url) throw new Error('Missing url= in query parameter');
+      if (url.indexOf('//') == 0) url = window.location.protocol + url;
       url = extendDataUrl(url);
       showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
 
