@@ -83,13 +83,14 @@ wvtest('dataToGvizTable', function() {
     data: [
       [null, null, null, null, null],
       [0, 1, 2, 3, 4],
-      [1.5, '2012-11-15 01:23', '2013-12-16 01:24:25', false, 'hello']
+      [1.5, '2012-11-15 01:23', '2013-12-16 01:24:25', false, 'hello'],
+      [1.5, '2012-11-15 01:23', '1/2/2013 01:24:25 PDT', false, 'hello']
     ]
   };
   var dt = afterquery.internal.dataToGvizTable(grid, {});
   dump(dt);
   WVPASSEQ(dt.cols.length, 5);
-  WVPASSEQ(dt.rows.length, 3);
+  WVPASSEQ(dt.rows.length, 4);
   for (var i in dt.cols) {
     WVPASSEQ(dt.cols[i].id, ['a', 'b', 'c', 'd', 'e'][i]);
     WVPASSEQ(dt.cols[i].label, dt.cols[i].id);
@@ -238,21 +239,29 @@ function _gridAsText(grid) {
 
 wvtest('gridFromData', function() {
   var rawdata = [
-    ['a', 'b', 'c', 'd', 'e', 'f'],
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
     [1, 2, 3,
-     '2012-1-1 2:03:04', 'Date(2013,0,2,3,4,5)', new Date(2014,0,3,4,5,6)]
+     '2012-1-1 2:03:04',
+     '1/2/2012 2:03:04 PDT',
+     'Date(2013,0,2,3,4,5)',
+     new Date(2014,0,3,4,5,6)]
   ];
   var otherdata = [
     ['a', 'b', 'c'],
     [1, 2, 4,
-     '2012-1-1 2:03:04', 'Date(2013,0,2,3,4,5)', new Date(2014,0,3,4,5,6)]
+     '2012-1-1 2:03:04',
+     'Date(2013,0,2,3,4,5)',
+     new Date(2014,0,3,4,5,6)]
   ];
   var grid = {
-    headers: ['a', 'b', 'c', 'd', 'e', 'f'],
+    headers: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
     data: [[1, 2, 3,
             new Date(2012,0,1,2,3,4),
-            new Date(2013,0,2,3,4,5), new Date(2014,0,3,4,5,6)]],
-    types: ['boolean', 'number', 'number', 'datetime', 'datetime', 'datetime']
+            new Date(2012,0,2,2,3,4),
+            new Date(2013,0,2,3,4,5),
+            new Date(2014,0,3,4,5,6)]],
+    types: ['boolean', 'number', 'number',
+            'datetime', 'datetime', 'datetime', 'datetime']
   };
   var gtext = _gridAsText(grid);
   WVPASSEQ(_gridAsText(afterquery.internal.gridFromData(grid)), gtext);
@@ -295,7 +304,7 @@ wvtest('group', function() {
     WVPASSEQ(grid.data, [[1, 7, 3]]);
   });
   afterquery.exec(['group=a,b;count(c)', 'pivot=a;b;c'], rawdata,
-		  function(grid) {
+                  function(grid) {
     WVPASSEQ(grid.data, [[1, 1, 2]]);
   });
 });
