@@ -1190,9 +1190,11 @@ var afterquery = (function() {
   function extractRegexp(grid, colname, regexp) {
     var r = RegExp(regexp);
     var colnum = keyToColNum(grid, colname);
+    var typ = grid.types[colnum];
+    grid.types[colnum] = T_STRING;
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
-      var match = r.exec(row[colnum]);
+      var match = r.exec(stringifiedCol(row[colnum], typ));
       if (match) {
         row[colnum] = match.slice(1).join('');
       } else {
@@ -1207,7 +1209,91 @@ var afterquery = (function() {
     console.debug('extractRegexp:', argval);
     var parts = trySplitOne(argval, '=');
     var colname = parts[0], regexp = parts[1];
+    if (regexp.indexOf('(') < 0) {
+      throw new Error('extract_regexp should have at least one (regex group)')
+    }
     grid = extractRegexp(grid, colname, regexp);
+    console.debug('grid:', grid);
+    return grid;
+  }
+
+
+  function quantize(grid, colname, quants) {
+    var colnum = keyToColNum(grid, colname);
+    if (quants.length == 0) {
+      throw new Error('quantize needs a bin size or list of edges');
+    } else if (quants.length == 1) {
+      // they specified a bin size
+      var binsize = quants[0] * 1;
+      if (binsize <= 0) {
+        throw new Error('quantize: bin size ' + binsize + ' must be > 0');
+      }
+      for (var rowi in grid.data) {
+        var row = grid.data[rowi];
+        var binnum = Math.floor(row[colnum] / binsize);
+        row[colnum] = binnum * binsize;
+      }
+    } else {
+      // they specified the actual bin edges
+      for (var rowi in grid.data) {
+        var row = grid.data[rowi];
+        var val = row[colnum];
+        var out = undefined;
+        for (var quanti in quants) {
+          if (val * 1 < quants[quanti] * 1) {
+            if (quanti == 0) {
+              out = '<' + quants[0];
+              break;
+            } else {
+              out = quants[quanti-1] + '-' + quants[quanti];
+              break;
+            }
+          }
+        }
+        if (!out) out = quants[quants.length-1] + '+';
+        row[colnum] = out;
+      }
+    }
+    return grid;
+  }
+
+
+  function doQuantize(grid, argval) {
+    console.debug('quantize:', argval);
+    var parts = trySplitOne(argval, '=');
+    var colname = parts[0], quants = parts[1].split(',');
+    grid = quantize(grid, colname, quants);
+    console.debug('grid:', grid);
+    return grid;
+  }
+
+
+  function yspread(grid) {
+    for (var rowi in grid.data) {
+      var row = grid.data[rowi];
+      var total = 0;
+      for (var coli in row) {
+        if (grid.types[coli] == T_NUM && row[coli]) {
+          total += Math.abs(row[coli] * 1);
+        }
+      }
+      if (!total) total = 1;
+      for (var coli in row) {
+        if (grid.types[coli] == T_NUM && row[coli]) {
+          row[coli] = row[coli] * 1 / total;
+        }
+      }
+    }
+    return grid;
+  }
+
+
+  function doYSpread(grid, argval) {
+    console.debug('yspread:', argval);
+    if (argval) {
+      throw new Error('yspread: no argument expected');
+    }
+    grid = yspread(grid);
     console.debug('grid:', grid);
     return grid;
   }
@@ -1406,6 +1492,10 @@ var afterquery = (function() {
         transform(doOrderBy, argval);
       } else if (argkey == 'extract_regexp') {
         transform(doExtractRegexp, argval);
+      } else if (argkey == 'quantize') {
+        transform(doQuantize, argval);
+      } else if (argkey == 'yspread') {
+        transform(doYSpread, argval);
       }
     }
   }

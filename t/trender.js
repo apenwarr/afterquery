@@ -138,7 +138,6 @@ wvtest('delta', function() {
 });
 
 
-
 wvtest('unselect', function() {
   var grid = {
     headers: ['a', 'b', 'c'],
@@ -176,7 +175,6 @@ wvtest('unselect', function() {
   WVPASSEQ(dt.data[4][0], 13);
   WVPASSEQ(dt.data[4][1], 15);
 });
-
 
 
 wvtest('guessTypes', function() {
@@ -290,6 +288,56 @@ wvtest('filter', function() {
   });
 });
 
+
+wvtest('extract_regexp', function() {
+  var rawdata = [
+    ['a', 'b', 'c', 'd', 'e'],
+    ['2013/01/02', '2013/1/2 9:02:03', 'foofoo', 373.37, 4.9]
+  ];
+  afterquery.exec('extract_regexp=a=(....-..)&' +
+                  'extract_regexp=b=....-..-(.. ..)&' +
+                  'extract_regexp=c=(o+)(f*)&' +
+                  'extract_regexp=d=\\.(.*)&' +
+                  'extract_regexp=e=([\\d.]*)',
+                  rawdata, function(grid) {
+    WVPASSEQ(grid.data, [['2013-01', '02 09', 'oof', '37', '4.9']]);
+  });
+});
+
+
+wvtest('quantize', function() {
+  var rawdata = [
+    ['a'],
+    [-5],
+    [936],
+    ['1234'],
+    [24],
+    [36.9]
+  ];
+  afterquery.exec('quantize=a=10', rawdata, function(grid) {
+    WVPASSEQ(grid.data,
+             [[-10], [930], [1230], [20], [30]]);
+  });
+  afterquery.exec('quantize=a=10,100,1000', rawdata, function(grid) {
+    WVPASSEQ(grid.data,
+             [['<10'], ['100-1000'], ['1000+'], ['10-100'], ['10-100']]);
+  });
+});
+
+
+wvtest('yspread', function() {
+  var rawdata = [
+    ['a', 'b', 'c'],
+    [-1, 4, 5],
+    [20, 10, 70]
+  ];
+  afterquery.exec('yspread', rawdata, function(grid) {
+    WVPASSEQ(grid.data,
+             [[-0.1, 0.4, 0.5], [0.2, 0.1, 0.7]]);
+  });
+});
+
+
 wvtest('group', function() {
   var rawdata = [
     ['a', 'b', 'c'],
@@ -308,6 +356,7 @@ wvtest('group', function() {
     WVPASSEQ(grid.data, [[1, 1, 2]]);
   });
 });
+
 
 wvtest('pivot', function() {
   var rawdata = [
