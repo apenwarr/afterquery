@@ -1501,6 +1501,68 @@ var afterquery = (function() {
   }
 
 
+  function createTracesChart(grid, el) {
+    var charts = [];
+    var xlines = [];
+    var dyoptions = {
+      drawXAxis: false,
+      drawYAxis: true,
+      drawGrid: false,
+      drawPoints: true,
+      fillGraph: true,
+      hideOverlayOnMouseOut: false,
+      stepPlot: true,
+      zoomCallback: function (x1, x2, yranges) {
+        var range = [x1, x2];
+        for (var charti = 0; charti < charts.length; charti++) {
+          charts[charti].updateOptions({ dateWindow: range });
+        }
+      }
+    };
+
+    var n = grid.headers.length - 1;;
+    $(el).css('overflow', 'scroll');
+    for (var i = 0; i < n; i++) {
+      var sub = $('<div style="border-bottom: 0px solid #888;"/>')[0];
+      $(sub).css('position', 'relative');
+      $(el).append(sub);
+      dyoptions.labels = [grid.headers[0], grid.headers[i+1]];
+      dyoptions.ylabel = grid.headers[i+1];
+
+      var data = [];
+      for (var rowi = 0; rowi < grid.data.length; rowi++) {
+        data.push([grid.data[rowi][0], grid.data[rowi][i+1]]);
+      }
+
+      if (i == n - 1) {
+        $(sub).css('height', '120px');
+        dyoptions.drawXAxis = true;
+      } else {
+        $(sub).css('height', '100px');
+      }
+
+      var xline = $('<div class="dy-line dy-xline" />')[0];
+      var yline = $('<div class="dy-line dy-yline" />')[0];
+      var declareCallback = function(xline, yline) {
+        return function(graph, series, canvas, x, y, color, size, idx) {
+          $(xline).css('left', x - 1 + 'px');
+          $(yline).css('top', y - 1 + 'px');
+          for (var charti = 0; charti < charts.length; charti++) {
+            charts[charti].setSelection(idx);
+          }
+        };
+      };
+      dyoptions.drawHighlightPointCallback = declareCallback(xline, yline);
+
+      var chart = new Dygraph(sub, data, dyoptions);
+      $(sub).append(xline, yline);
+      charts.push(chart);
+    }
+
+    return { draw: function(table, options) { } };
+  }
+
+
   function addRenderers(queue, args) {
     var trace = args.get('trace');
     var chartops = args.get('chart');
@@ -1578,6 +1640,8 @@ var afterquery = (function() {
           if (charttype == 'dygraph+errors') {
             options.errorBars = true;
           }
+        } else if (charttype == 'traces') {
+          t = createTracesChart(grid, el);
         } else if (charttype == 'heatgrid') {
           t = new HeatGrid(el);
         } else {
@@ -1591,7 +1655,7 @@ var afterquery = (function() {
         options.allowHtml = true;
       }
 
-      if (charttype == 'heatgrid') {
+      if (charttype == 'heatgrid' || charttype == 'traces') {
         datatable = grid;
       } else {
         datatable = dataToGvizTable(grid, gridoptions);
