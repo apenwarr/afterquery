@@ -338,12 +338,19 @@ var afterquery = (function() {
   }
 
 
-  function parseDates(data, types) {
+  function convertTypes(data, types) {
     for (var coli in types) {
       var type = types[coli];
       if (type === T_DATE || type === T_DATETIME) {
         for (var rowi in data) {
           data[rowi][coli] = myParseDate(data[rowi][coli]);
+        }
+      } else if (type === T_NUM || type === T_BOOL) {
+        for (var rowi in data) {
+          var v = data[rowi][coli];
+          if (v != null && v != '') {
+            data[rowi][coli] = v * 1;
+          }
         }
       }
     }
@@ -1414,7 +1421,7 @@ var afterquery = (function() {
       data = rawdata.slice(1);
     }
     types = guessTypes(data);
-    parseDates(data, types);
+    convertTypes(data, types);
     return {headers: headers, data: data, types: types};
   }
 
