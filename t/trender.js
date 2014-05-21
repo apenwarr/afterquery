@@ -193,7 +193,7 @@ wvtest('guessTypes', function() {
   WVPASSEQ(guessTypes([['2012-01/01 23:45:67']]), ['datetime']);
   WVPASSEQ(guessTypes([['2012/01/01T23:45:67']]), ['datetime']);
   WVPASSEQ(guessTypes([['2012-01-01T23:45:67']]), ['datetime']);
-  WVPASSEQ(guessTypes([['2012/01/01 23:45:67.12']]), ['string']);
+  WVPASSEQ(guessTypes([['2012/01/01 23:45:67.12']]), ['datetime']);
   WVPASSEQ(guessTypes([['Date(2012,2,3)']]), ['date']);
   WVPASSEQ(guessTypes([['Date(2012,2,3,4)']]), ['datetime']);
   WVPASSEQ(guessTypes([['Date(2012,2,3,4,5,6)']]), ['datetime']);
@@ -239,32 +239,48 @@ wvtest('gridFromData', function() {
   var rawdata = [
     ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
     [1, 2, 3,
-     '2012-1-1 2:03:04',
-     '1/2/2012 2:03:04 PDT',
+     '2012-1-1 2:03:04.6',
+     '1/2/2012 2:03:04.56789 PDT',
      'Date(2013,0,2,3,4,5)',
      new Date(2014,0,3,4,5,6)]
   ];
   var otherdata = [
     ['a', 'b', 'c'],
     [1, 2, 4,
-     '2012-1-1 2:03:04',
+     '2012-1-1 2:03:04.6',
      'Date(2013,0,2,3,4,5)',
      new Date(2014,0,3,4,5,6)]
   ];
   var grid = {
     headers: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
     data: [[1, 2, 3,
-            new Date(2012,0,1,2,3,4),
-            new Date(2012,0,2,2,3,4),
+            new Date(2012,0,1,2,3,4,600),
+            new Date(2012,0,2,2,3,4,568),
             new Date(2013,0,2,3,4,5),
             new Date(2014,0,3,4,5,6)]],
     types: ['boolean', 'number', 'number',
             'datetime', 'datetime', 'datetime', 'datetime']
   };
   var gtext = _gridAsText(grid);
-  WVPASSEQ(_gridAsText(afterquery.internal.gridFromData(grid)), gtext);
-  WVPASSEQ(_gridAsText(afterquery.internal.gridFromData(rawdata)), gtext);
-  WVPASSNE(_gridAsText(afterquery.internal.gridFromData(otherdata)), gtext);
+
+  var ggrid = afterquery.internal.gridFromData(grid);
+  var grawdata = afterquery.internal.gridFromData(rawdata);
+  var gotherdata = afterquery.internal.gridFromData(otherdata);
+  WVPASSEQ(_gridAsText(ggrid), gtext);
+  WVPASSEQ(_gridAsText(grawdata), gtext);
+  WVPASSNE(_gridAsText(gotherdata), gtext);
+
+  WVPASSEQ(ggrid.data, grawdata.data);
+  WVPASSNE(ggrid.data, gotherdata.data)
+
+  print(ggrid.types);
+  WVPASSEQ(afterquery.internal.stringifiedCols(grawdata.data[0],
+                                               grawdata.types),
+           [1, 2, 3,
+            '2012-01-01 02:03:04.600',
+            '2012-01-02 02:03:04.568',
+            '2013-01-02 03:04:05',
+            '2014-01-03 04:05:06']);
 });
 
 

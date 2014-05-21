@@ -263,20 +263,23 @@ var afterquery = (function() {
 
   // We want to support various different date formats that people
   // tend to use as strings, with and without time of day,
-  // including yyyy-mm-dd hh:mm:ss, yyyy/mm/dd, mm/dd/yyyy hh:mm PST, etc.
+  // including yyyy-mm-dd hh:mm:ss.mmm, yyyy/mm/dd, mm/dd/yyyy hh:mm PST, etc.
   // This gets a little hairy because so many things are optional.
   // We could try to support two-digit years or dd-mm-yyyy formats, but
   // those create parser ambiguities, so let's avoid it.
-  var DATE_RE1 = RegExp('^(\\d{1,4})[-/](\\d{1,2})(?:[-/](\\d{1,4})' +
-                        '(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d))?)?)?' +
-                        '(?: \\w\\w\\w)?$');
-  // Some people (gvix, for example) provide "json" files where dates
+  var DATE_RE1 = RegExp(
+      '^(\\d{1,4})[-/](\\d{1,2})(?:[-/](\\d{1,4})' +
+      '(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d)(?:\\.(\\d+))?)?)?)?' +
+      '(?: \\w\\w\\w)?$');
+  // Some people (gviz, for example) provide "json" files where dates
   // look like javascript Date() object declarations, eg.
   // Date(2014,0,1,2,3,4)
   var DATE_RE2 = /^Date\(([\d,]+)\)$/;
   function myParseDate(s) {
     if (s == null) return s;
     if (s && s.getDate) return s;
+
+    // Try gviz-style Date(...) format first
     var g = DATE_RE2.exec(s);
     if (g) {
       g = (',' + g[1]).split(',');
@@ -284,6 +287,8 @@ var afterquery = (function() {
         g[2]++;  // date objects start at month=0, for some reason
       }
     }
+
+    // If that didn't match, try string-style date format
     if (!g || g.length > 8) g = DATE_RE1.exec(s);
     if (g && (g[3] > 1000 || g[1] > 1000)) {
       if (g[3] > 1000) {
@@ -293,32 +298,43 @@ var afterquery = (function() {
         // yyyy-mm-dd
         var yyyy = g[1], mm = g[2], dd = g[3];
       }
+      if (g[7]) {
+        // parse milliseconds
+        while (g[7].length < 3) g[7] = g[7] + '0';
+        for (var i = g[7].length; i > 3; i--) g[7] /= 10.0;
+        g[7] = Math.round(g[7], 0);
+      }
       return new Date(yyyy, mm - 1, dd || 1,
-                      g[4] || 0, g[5] || 0, g[6] || 0, g[7] || 0);
+                      g[4] || 0, g[5] || 0, g[6] || 0,
+                      g[7] || 0);
     }
     return NaN;
   }
 
 
-  function zpad(n) {
+  function zpad(n, width) {
     var s = '' + n;
-    if (s.length < 2) s = '0' + s;
+    while (s.length < width) s = '0' + s;
     return s;
   }
 
 
   function dateToStr(d) {
+    if (!d) return '';
     return (d.getFullYear() + '-' +
-            zpad(d.getMonth() + 1) + '-' +
-            zpad(d.getDate()));
+            zpad(d.getMonth() + 1, 2) + '-' +
+            zpad(d.getDate(), 2));
   }
 
 
   function dateTimeToStr(d) {
+    if (!d) return '';
+    var msec = d.getMilliseconds();
     return (dateToStr(d) + ' ' +
-            zpad(d.getHours()) + ':' +
-            zpad(d.getMinutes()) + ':' +
-            zpad(d.getSeconds()));
+            zpad(d.getHours(), 2) + ':' +
+            zpad(d.getMinutes(), 2) + ':' +
+            zpad(d.getSeconds(), 2) +
+            (msec ? ('.' + zpad(msec, 3)) : ''));
   }
 
 
