@@ -1524,58 +1524,119 @@ var afterquery = (function() {
   }
 
 
-  function createTracesChart(grid, el) {
+  function dyIndexFromX(dychart, x) {
+    // TODO(apenwarr): consider a binary search
+    for (var i = dychart.numRows() - 1; i >= 0; i--) {
+      if (dychart.getValue(i, 0) <= x) {
+        break;
+      }
+    }
+    return i;
+  }
+
+
+  function createTracesChart(grid, el, colsPerChart) {
     var charts = [];
     var xlines = [];
-    var dyoptions = {
-      drawXAxis: false,
-      drawYAxis: true,
-      drawGrid: false,
-      drawPoints: true,
-      fillGraph: true,
-      hideOverlayOnMouseOut: false,
-      stepPlot: true,
-      zoomCallback: function (x1, x2, yranges) {
-        var range = [x1, x2];
-        for (var charti = 0; charti < charts.length; charti++) {
-          charts[charti].updateOptions({ dateWindow: range });
-        }
-      }
-    };
 
-    var n = grid.headers.length - 1;;
+    var n = (grid.headers.length - 1) / colsPerChart;
     $(el).css('overflow', 'scroll');
+    var tab = $('<table class="dy-table" style="width:100%;"/>');
+    $(el).append(tab);
+
+    var zooming = false;
     for (var i = 0; i < n; i++) {
-      var sub = $('<div style="border-bottom: 0px solid #888;"/>')[0];
+      var dyoptions = {
+        connectSeparatedPoints: false,
+        drawYAxis: true,
+        drawXAxis: false,
+        drawGrid: false,
+        drawPoints: true,
+        fillGraph: false,
+        hideOverlayOnMouseOut: false,
+        stepPlot: true,
+        strokeWidth: 0,
+        zoomCallback: function (x1, x2, yranges) {
+          if (zooming) return;
+          zooming = true;
+          var range = [x1, x2];
+          for (var charti = 0; charti < charts.length; charti++) {
+            charts[charti].updateOptions({ dateWindow: range });
+          }
+          zooming = false;
+        }
+      };
+      var coli = 1 + (i * colsPerChart);
+      var row = $('<tr>');
+      var labelcol = $('<td>').text(grid.headers[coli]);
+      var col = $('<td style="width:100%">');
+      $(tab).append(row);
+      $(row).append(labelcol);
+      $(row).append(col);
+      var odd = (i % 2) ? 'odd' : 'even';
+      var sub = $('<div class="dy-chart dy-chart-' + odd + '"/>')[0];
       $(sub).css('position', 'relative');
-      $(el).append(sub);
-      dyoptions.labels = [grid.headers[0], grid.headers[i+1]];
-      dyoptions.ylabel = grid.headers[i+1];
+      $(col).append(sub);
+      dyoptions.labels = [grid.headers[0], 'value'];
 
       var data = [];
-      for (var rowi = 0; rowi < grid.data.length; rowi++) {
-        data.push([grid.data[rowi][0], grid.data[rowi][i+1]]);
+      if (colsPerChart == 3) {
+        // input data is x,val,min,max
+        // output data must be x,[min,val,max]
+        for (var rowi = 0; rowi < grid.data.length; rowi++) {
+          var datacol = [grid.data[rowi][coli + 1],
+                         grid.data[rowi][coli + 0],
+                         grid.data[rowi][coli + 2]];
+          if (rowi == 0 ||
+              rowi == grid.data.length - 1 ||
+              datacol[0] != null ||
+              datacol[1] != null ||
+              datacol[2] != null) {
+            data.push([grid.data[rowi][0], datacol]);
+          }
+        }
+      } else {
+        for (var rowi = 0; rowi < grid.data.length; rowi++) {
+          if (rowi == 0 ||
+              rowi == grid.data.length - 1 ||
+              grid.data[rowi][coli] != null) {
+            data.push([grid.data[rowi][0], grid.data[rowi][coli]]);
+          }
+        }
       }
 
       if (i == n - 1) {
-        $(sub).css('height', '120px');
+        $(sub).css('height', '140px');
         dyoptions.drawXAxis = true;
       } else {
-        $(sub).css('height', '100px');
+        $(sub).css('height', '120px');
       }
 
       var xline = $('<div class="dy-line dy-xline" />')[0];
       var yline = $('<div class="dy-line dy-yline" />')[0];
-      var declareCallback = function(xline, yline) {
+      var inHighlighter = false;
+      var declareCallback = function(data, xline, yline) {
         return function(graph, series, canvas, x, y, color, size, idx) {
           $(xline).css('left', x - 1 + 'px');
           $(yline).css('top', y - 1 + 'px');
+
+          // also move the highlight in all other charts
+          if (inHighlighter) return;
+          inHighlighter = true;
           for (var charti = 0; charti < charts.length; charti++) {
-            charts[charti].setSelection(idx);
+            var otheridx = dyIndexFromX(charts[charti], data[idx][0]);
+            charts[charti].setSelection(otheridx);
           }
+          inHighlighter = false;
         };
       };
-      dyoptions.drawHighlightPointCallback = declareCallback(xline, yline);
+      dyoptions.drawHighlightPointCallback = declareCallback(data,
+                                                             xline, yline);
+      if (colsPerChart == 3) {
+        dyoptions.customBars = true;
+      } else {
+        dyoptions.customBars = false;
+      }
 
       var chart = new Dygraph(sub, data, dyoptions);
       $(sub).append(xline, yline);
@@ -1663,8 +1724,9 @@ var afterquery = (function() {
           if (charttype == 'dygraph+errors') {
             options.errorBars = true;
           }
-        } else if (charttype == 'traces') {
-          t = createTracesChart(grid, el);
+        } else if (charttype == 'traces' || charttype == 'traces+minmax') {
+          t = createTracesChart(grid, el,
+                                charttype == 'traces+minmax' ? 3 : 1);
         } else if (charttype == 'heatgrid') {
           t = new HeatGrid(el);
         } else {
@@ -1678,7 +1740,9 @@ var afterquery = (function() {
         options.allowHtml = true;
       }
 
-      if (charttype == 'heatgrid' || charttype == 'traces') {
+      if (charttype == 'heatgrid' ||
+          charttype == 'traces' ||
+          charttype == 'traces+minmax') {
         datatable = grid;
       } else {
         datatable = dataToGvizTable(grid, gridoptions);
