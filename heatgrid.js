@@ -71,11 +71,12 @@ var HeatGrid = function(el) {
     if (xmult < 1) xmult = 1;
     var xsize = grid.headers.length * xmult;
     var ysize = grid.data.length;
+    var vysize = ysize < 400 ? 400 : ysize;
     canvas.attr({width: xsize, height: ysize});
     canvas.css({
       background: '#fff',
       width: '100%',
-      height: ysize
+      height: vysize
     });
     console.debug('heatgrid canvas size is: x y =', xsize, ysize);
     var ctx = canvas[0].getContext('2d');
@@ -103,9 +104,11 @@ var HeatGrid = function(el) {
       info.push(grid.headers[x]);
       info.push('value=' + grid.data[y][x]);
 
-      var cx = x / grid.headers.length * canvas.width();
-      var cy = y / grid.data.length * canvas.height();
-      highlight.css({left: cx - 2, top: cy - 2});
+      var psize_x = canvas.width() / grid.headers.length;
+      var psize_y = canvas.height() / grid.data.length;
+      var cx = x * psize_x;
+      var cy = y * psize_y;
+      highlight.css({left: cx, top: cy});
       if (cx < canvas.width() / 2) {
         popover.css({
           left: cx + 30,
