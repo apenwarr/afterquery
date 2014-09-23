@@ -139,6 +139,7 @@ var afterquery = (function() {
       for (var coli in data[rowi]) {
         var cell = data[rowi][coli];
         if (is_html && types[coli] === T_STRING) {
+          cell = cell.toString();
           var urlresult = looksLikeUrl(cell);
           if (urlresult) {
             cell = '<a href="' + encodeURI(urlresult[0]) + '">' +
@@ -1363,6 +1364,118 @@ var afterquery = (function() {
   }
 
 
+  function isString(v) {
+    return v.charAt !== undefined;
+  }
+
+
+  function isArray(v) {
+    return v.splice !== undefined;
+  }
+
+
+  function isObject(v) {
+    return typeof(v) === 'object';
+  }
+
+
+  function isDate(v) {
+    return v.getDate !== undefined;
+  }
+
+
+  function isScalar(v) {
+    return isString(v) || !isObject(v) || isDate(v);
+  }
+
+
+  function check2d(rawdata) {
+    if (!isArray(rawdata)) return false;
+    for (var rowi = 0; rowi < rawdata.length && rowi < 5; rowi++) {
+      var row = rawdata[rowi];
+      if (!isArray(row)) return false;
+      for (var coli = 0; coli < row.length; coli++) {
+        var col = row[coli];
+        if (!isScalar(col)) return false;
+      }
+    }
+    return true;
+  }
+
+
+  function _copyObj(out, v) {
+    for (var key in v) {
+      out[key] = v[key];
+    }
+    return out;
+  }
+
+
+  function copyObj(v) {
+    return _copyObj({}, v);
+  }
+
+
+  function multiplyLists(out, l1, l2) {
+    if (l1 === undefined) throw new Error('l1 undefined');
+    if (l2 === undefined) throw new Error('l2 undefined');
+    for (var l1i in l1) {
+      var r1 = l1[l1i];
+      for (var l2i in l2) {
+        var r2 = l2[l2i];
+        var o = copyObj(r1);
+        _copyObj(o, r2);
+        out.push(o);
+      }
+    }
+    return out;
+  }
+
+
+  function flattenDict(headers, coldict, rowtmp, d) {
+    var out = [];
+    var lists = [];
+    for (var key in d) {
+      var value = d[key];
+      if (isScalar(value)) {
+        if (coldict[key] === undefined) {
+          coldict[key] = headers.length;
+          headers.push(key);
+        }
+        rowtmp[key] = value;
+      } else if (isArray(value)) {
+        lists.push(flattenList(headers, coldict, value));
+      } else {
+        lists.push(flattenDict(headers, coldict, rowtmp, value));
+      }
+    }
+
+    // now multiply all the lists together
+    var tmp1 = [{}];
+    while (lists.length) {
+      var tmp2 = [];
+      multiplyLists(tmp2, tmp1, lists.shift());
+      tmp1 = tmp2;
+    }
+
+    // this is apparently the "right" way to append a list to a list.
+    Array.prototype.push.apply(out, tmp1);
+    return out;
+  }
+
+
+  function flattenList(headers, coldict, rows) {
+    var out = [];
+    for (var rowi in rows) {
+      var row = rows[rowi];
+      var rowtmp = {};
+      var sublist = flattenDict(headers, coldict, rowtmp, row);
+      multiplyLists(out, [rowtmp], sublist);
+    }
+    return out;
+  }
+
+
   function gridFromData(rawdata) {
     if (rawdata && rawdata.headers && rawdata.data && rawdata.types) {
       // already in grid format
@@ -1411,14 +1524,34 @@ var afterquery = (function() {
       headers = [];
       for (var coli in rawdata.cols) {
         var col = rawdata.cols[coli];
-        headers.push(col.caption);
+        headers.push(col.caption || col);
       }
       data = rawdata.data;
-    } else {
-      // assume simple [[cols...]...] (two-dimensional array) format, where
+    } else if (check2d(rawdata)) {
+      // simple [[cols...]...] (two-dimensional array) format, where
       // the first row is the headers.
       headers = rawdata[0];
       data = rawdata.slice(1);
+    } else if (isArray(rawdata)) {
+      // assume datacube format, which is a nested set of lists and dicts.
+      // A dict contains a list of key (column name) and value (cell content)
+      // pairs.  A list contains a set of lists or dicts, which corresponds
+      // to another "dimension" of the cube.  To flatten it, we have to
+      // replicate the row once for each element in the list.
+      var coldict = {};
+      headers = [];
+      var rowdicts = flattenList(headers, coldict, rawdata);
+      data = [];
+      for (var rowi in rowdicts) {
+        var rowdict = rowdicts[rowi];
+        var row = [];
+        for (var coli in headers) {
+          row.push(rowdict[headers[coli]]);
+        }
+        data.push(row);
+      }
+    } else {
+      throw new Error("don't know how to parse this json layout, sorry!");
     }
     types = guessTypes(data);
     convertTypes(data, types);

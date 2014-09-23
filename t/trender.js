@@ -235,29 +235,29 @@ function _gridAsText(grid) {
 }
 
 
-wvtest('gridFromData', function() {
+wvtest('gridFromData_array', function() {
   var rawdata = [
     ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
-    [1, "2", 3,
+    [1, '2', 3,
      '2012-1-1 2:03:04.6',
      '1/2/2012 2:03:04.56789 PDT',
      'Date(2013,0,2,3,4,5)',
-     new Date(2014,0,3,4,5,6)]
+     new Date(2014, 0, 3, 4, 5, 6)]
   ];
   var otherdata = [
     ['a', 'b', 'c'],
-    [1, "2", 4,
+    [1, '2', 4,
      '2012-1-1 2:03:04.6',
      'Date(2013,0,2,3,4,5)',
-     new Date(2014,0,3,4,5,6)]
+     new Date(2014, 0, 3, 4, 5, 6)]
   ];
   var grid = {
     headers: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
-    data: [["1", 2, 3,
-            new Date(2012,0,1,2,3,4,600),
-            new Date(2012,0,2,2,3,4,568),
-            new Date(2013,0,2,3,4,5),
-            new Date(2014,0,3,4,5,6)]],
+    data: [['1', 2, 3,
+            new Date(2012, 0, 1, 2, 3, 4, 600),
+            new Date(2012, 0, 2, 2, 3, 4, 568),
+            new Date(2013, 0, 2, 3, 4, 5),
+            new Date(2014, 0, 3, 4, 5, 6)]],
     types: ['boolean', 'number', 'number',
             'datetime', 'datetime', 'datetime', 'datetime']
   };
@@ -271,7 +271,7 @@ wvtest('gridFromData', function() {
   WVPASSNE(_gridAsText(gotherdata), gtext);
 
   WVPASSEQ(ggrid.data, grawdata.data);
-  WVPASSNE(ggrid.data, gotherdata.data)
+  WVPASSNE(ggrid.data, gotherdata.data);
 
   print(ggrid.types);
   WVPASSEQ(afterquery.internal.stringifiedCols(grawdata.data[0],
@@ -282,6 +282,83 @@ wvtest('gridFromData', function() {
             '2013-01-02 03:04:05',
             '2014-01-03 04:05:06']);
   WVPASS(grawdata.data[0][1].toPrecision);  // check it's a "number"
+});
+
+
+wvtest('gridFromData_gviz', function() {
+  var rawdata =
+    {
+      'reqId': '0',
+      'version': '0.6',
+      'table': {
+        'cols': [
+          { 'id': 'col1', 'type': 'string', 'label': 'col1'},
+          { 'id': 'col2', 'type': 'number', 'label': 'col2'}],
+        'rows': [
+          { 'c': [{ 'v': '2014-08-21' }, null] },
+          { 'c': [{ 'v': '2014-08-26'}, { 'v': 810 }] }
+        ]
+      },
+      'status': 'ok'
+    };
+  var grid = {
+    headers: ['col1', 'col2'],
+    data: [[new Date(2014, 7, 21), null], [new Date(2014, 7, 26), 810]],
+    types: ['date', 'number']
+  };
+  var gtext = _gridAsText(grid);
+  var ggrid = afterquery.internal.gridFromData(grid);
+  var grawdata = afterquery.internal.gridFromData(rawdata);
+  WVPASSEQ(_gridAsText(ggrid), gtext);
+  WVPASSEQ(_gridAsText(grawdata), gtext);
+});
+
+
+wvtest('gridFromData_eql', function() {
+  var rawdata = {
+    cols: [{'caption': 'col1'}, {'caption': 'col2'}],
+    data: [['2014-08-21', null], ['2014-08-26', 810]]
+  };
+  var grid = {
+    headers: ['col1', 'col2'],
+    data: [[new Date(2014, 7, 21), null], [new Date(2014, 7, 26), 810]],
+    types: ['date', 'number']
+  };
+  var gtext = _gridAsText(grid);
+  var ggrid = afterquery.internal.gridFromData(grid);
+  var grawdata = afterquery.internal.gridFromData(rawdata);
+  WVPASSEQ(_gridAsText(ggrid), gtext);
+  WVPASSEQ(_gridAsText(grawdata), gtext);
+});
+
+
+wvtest('gridFromData_datacube', function() {
+  var rawdata = [
+    {
+      key: { k1: 'blob', k2: 5 },
+      value: [{ a: 1, b: 2 }, { a: 3, c: 4 }]
+    },
+    {
+      key: { k2: 6, k3: 7 },
+      value: [{ z: 9 }, {}]
+    }
+  ];
+  var grid = {
+    headers: ['k1', 'k2', 'a', 'b', 'c', 'k3', 'z'],
+    data: [
+      ['blob', 5, 1, 2, null, null, null],
+      ['blob', 5, 3, null, 4, null, null],
+      [null, 6, null, null, null, 7, 9],
+      [null, 6, null, null, null, 7, null]
+    ],
+    types: ['string', 'number', 'number', 'number',
+            'number', 'number', 'number']
+  };
+  var gtext = _gridAsText(grid);
+  var ggrid = afterquery.internal.gridFromData(grid);
+  var grawdata = afterquery.internal.gridFromData(rawdata);
+  WVPASSEQ(_gridAsText(ggrid), gtext);
+  WVPASSEQ(_gridAsText(grawdata), gtext);
 });
 
 
