@@ -514,10 +514,10 @@ var afterquery = (function() {
         } else {
           return 0;
         }
-      }
+      };
       if (l.length > 0) {
         l.sort(comparator);
-        return l[parseInt(l.length/2)];
+        return l[parseInt(l.length / 2)];
       } else {
         return null;
       }
@@ -1233,7 +1233,7 @@ var afterquery = (function() {
     var parts = trySplitOne(argval, '=');
     var colname = parts[0], regexp = parts[1];
     if (regexp.indexOf('(') < 0) {
-      throw new Error('extract_regexp should have at least one (regex group)')
+      throw new Error('extract_regexp should have at least one (regex group)');
     }
     grid = extractRegexp(grid, colname, regexp);
     console.debug('grid:', grid);
@@ -1268,12 +1268,12 @@ var afterquery = (function() {
               out = '<' + quants[0];
               break;
             } else {
-              out = quants[quanti-1] + '-' + quants[quanti];
+              out = quants[quanti - 1] + '-' + quants[quanti];
               break;
             }
           }
         }
-        if (!out) out = quants[quants.length-1] + '+';
+        if (!out) out = quants[quants.length - 1] + '+';
         row[colnum] = out;
       }
     }
@@ -1556,7 +1556,7 @@ var afterquery = (function() {
         hideOverlayOnMouseOut: false,
         stepPlot: true,
         strokeWidth: 0,
-        zoomCallback: function (x1, x2, yranges) {
+        zoomCallback: function(x1, x2, yranges) {
           if (zooming) return;
           zooming = true;
           var range = [x1, x2];
@@ -1904,7 +1904,7 @@ var afterquery = (function() {
     var data = text.trim();
     var start = data.indexOf('jsonp(');
     if (start >= 0) {
-      data = data.substr(start + 6, data.length - start - 6 - 2)
+      data = data.substr(start + 6, data.length - start - 6 - 2);
     }
     data = JSON.parse(data);
     success_func(data);
@@ -1933,7 +1933,7 @@ var afterquery = (function() {
         console.debug('calling success_func');
         success_func(data);
         successfunc_called = true;
-      }
+      };
 
       // the default jsonp callback
       iframe.contentWindow.jsonp = real_success_func;
@@ -1976,7 +1976,8 @@ var afterquery = (function() {
                          encodeURI(hostpart) +
                          '</b> - sorry.');
         }
-        successfunc_called = true;  // needing oauth2 is "success" in that we know what's up
+        // needing oauth2 is "success" in that we know what's going on
+        successfunc_called = true;
       };
 
       // some services are hardcoded to use the gviz callback, so
@@ -2000,7 +2001,7 @@ var afterquery = (function() {
           err('Error loading data; check javascript console for details.');
           err('<a href="' + encodeURI(url) + '">' + encodeURI(url) + '</a>');
         }
-      }
+      };
 
       iframe.contentWindow.jsonp_url = url;
 
@@ -2010,7 +2011,8 @@ var afterquery = (function() {
       //  localStorage, set cookies, etc.  We can use the new html5 postMessage
       //  feature to safely send json data from the iframe back to us.
       // ...but for the moment we have to trust the data provider.
-      //TODO(apenwarr): at that time, make this script.async=1 and run postscript from there.
+      //TODO(apenwarr): at that time, make this script.async=1
+      //  ...and run postscript from there.
 
       var script = iframe.contentDocument.createElement('script');
       script.async = false;
@@ -2032,7 +2034,7 @@ var afterquery = (function() {
       console.debug('xhr returned error:', msg);
       console.debug('(trying jsonp instead)');
       getUrlData_jsonp(url, success_func, error_func);
-    }
+    };
     getUrlData_xhr(url, success_func, onError);
   }
 

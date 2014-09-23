@@ -48,8 +48,8 @@ wvtest('argsToArray', function() {
   var x = function() {
     return afterquery.internal.argsToArray(arguments);
   };
-  WVPASSEQ(x(1,2,3), [1,2,3]);
-  WVPASSEQ(x(1,2,3).slice(1), [2,3]);
+  WVPASSEQ(x(1, 2, 3), [1, 2, 3]);
+  WVPASSEQ(x(1, 2, 3).slice(1), [2, 3]);
 });
 
 
@@ -119,7 +119,7 @@ wvtest('delta', function() {
       [5, 7],
       [30, 1],
       [2, 1],
-      [2, 1],
+      [2, 1]
     ]
   };
   var dt = afterquery.internal.deltaBy(grid, 'a');
@@ -147,7 +147,7 @@ wvtest('unselect', function() {
       [4, 5, 6],
       [7, 8, 9],
       [10, 11, 12],
-      [13, 14, 15],
+      [13, 14, 15]
     ]
   };
   var dt = afterquery.internal.unselectBy(grid, 'b');
@@ -292,16 +292,16 @@ wvtest('filter', function() {
     ['2013/04/14', '3.5', 1]
   ];
   afterquery.exec('filter=b=2', rawdata, function(grid) {
-    WVPASSEQ(grid.data, [[new Date(2013,0,2), 2, 3]]);
+    WVPASSEQ(grid.data, [[new Date(2013, 0, 2), 2, 3]]);
   });
   afterquery.exec('filter=a=2013-4-14', rawdata, function(grid) {
-    WVPASSEQ(grid.data, [[new Date(2013,3,14), 3.5, 1]]);
+    WVPASSEQ(grid.data, [[new Date(2013, 3, 14), 3.5, 1]]);
   });
   afterquery.exec('filter=a<2013-04-14', rawdata, function(grid) {
-    WVPASSEQ(grid.data, [[new Date(2013,0,2), 2, 3]]);
+    WVPASSEQ(grid.data, [[new Date(2013, 0, 2), 2, 3]]);
   });
   afterquery.exec('filter=a>2013-01-02', rawdata, function(grid) {
-    WVPASSEQ(grid.data, [[new Date(2013,3,14), 3.5, 1]]);
+    WVPASSEQ(grid.data, [[new Date(2013, 3, 14), 3.5, 1]]);
   });
 });
 
@@ -396,7 +396,7 @@ wvtest('pivot', function() {
   afterquery.exec('group=;count(b),sum(b),min(b),max(b),' +
                   'avg(b),median(b),stddev(b)', rawdata, function(grid) {
     WVPASSEQ(grid.headers, ['b', 'b', 'b', 'b', 'b', 'b', 'b']);
-    WVPASSEQ(grid.data, [[3, 27, 7, 11, 27.0/3.0, 9, Math.sqrt(8)]]);
+    WVPASSEQ(grid.data, [[3, 27, 7, 11, 27.0 / 3.0, 9, Math.sqrt(8)]]);
   });
   afterquery.exec('pivot=a;b;only(c)', rawdata, function(grid) {
     WVPASSEQ(grid.headers, ['a', 9, 7, 11]);
