@@ -1385,7 +1385,7 @@ var afterquery = (function() {
 
 
   function isScalar(v) {
-    return isString(v) || !isObject(v) || isDate(v);
+    return v == undefined || isString(v) || !isObject(v) || isDate(v);
   }
 
 

@@ -237,11 +237,12 @@ function _gridAsText(grid) {
 
 wvtest('gridFromData_array', function() {
   var rawdata = [
-    ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
     [1, '2', 3,
      '2012-1-1 2:03:04.6',
      '1/2/2012 2:03:04.56789 PDT',
      'Date(2013,0,2,3,4,5)',
+     null,
      new Date(2014, 0, 3, 4, 5, 6)]
   ];
   var otherdata = [
@@ -252,14 +253,15 @@ wvtest('gridFromData_array', function() {
      new Date(2014, 0, 3, 4, 5, 6)]
   ];
   var grid = {
-    headers: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+    headers: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
     data: [['1', 2, 3,
             new Date(2012, 0, 1, 2, 3, 4, 600),
             new Date(2012, 0, 2, 2, 3, 4, 568),
             new Date(2013, 0, 2, 3, 4, 5),
+            null,
             new Date(2014, 0, 3, 4, 5, 6)]],
     types: ['boolean', 'number', 'number',
-            'datetime', 'datetime', 'datetime', 'datetime']
+            'datetime', 'datetime', 'datetime', 'boolean', 'datetime']
   };
   var gtext = _gridAsText(grid);
 
@@ -280,6 +282,7 @@ wvtest('gridFromData_array', function() {
             '2012-01-01 02:03:04.600',
             '2012-01-02 02:03:04.568',
             '2013-01-02 03:04:05',
+            'null',
             '2014-01-03 04:05:06']);
   WVPASS(grawdata.data[0][1].toPrecision);  // check it's a "number"
 });
