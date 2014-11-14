@@ -3,7 +3,7 @@ default: all
 all: help.html
 
 MACOS_JS_PATH=/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Resources/jsc
-jsshell:
+jsshell: v8shell.cc
 	rm -f $@
 	[ -e "${MACOS_JS_PATH}" ] && \
 	ln -s "${MACOS_JS_PATH}" jsshell || \
