@@ -68,7 +68,7 @@ Afterquery.prototype.showstatus = function(s, s2) {
   };
 
 
-Afterquery.prototype.parseArgs = function(query) {
+Afterquery.parseArgs = function(query) {
     var kvlist;
     if (query.join) {
       // user provided an array of 'key=value' strings
@@ -99,7 +99,7 @@ Afterquery.prototype.parseArgs = function(query) {
 
 
 
-Afterquery.prototype.looksLikeUrl = function(s) {
+Afterquery.looksLikeUrl = function(s) {
     var IS_URL_RE = RegExp('^(http|https)://');
     var url, label;
     var pos = (s || '').lastIndexOf('|');
@@ -118,7 +118,7 @@ Afterquery.prototype.looksLikeUrl = function(s) {
   };
 
 
-Afterquery.prototype.htmlEscape = function(s) {
+Afterquery.htmlEscape = function(s) {
     if (s == undefined) {
       return s;
     }
@@ -129,7 +129,7 @@ Afterquery.prototype.htmlEscape = function(s) {
   };
 
 
-Afterquery.prototype.dataToGvizTable = function(grid, options) {
+Afterquery.dataToGvizTable = function(grid, options) {
     if (!options) options = {};
     var is_html = options.allowHtml;
     var headers = grid.headers, data = grid.data, types = grid.types;
@@ -138,7 +138,7 @@ Afterquery.prototype.dataToGvizTable = function(grid, options) {
       dheaders.push({
         id: headers[i],
         label: headers[i],
-        type: (types[i] != this.T_BOOL || !options.bool_to_num) ? types[i] : this.T_NUM
+        type: (types[i] != Afterquery.T_BOOL || !options.bool_to_num) ? types[i] : Afterquery.T_NUM
       });
     }
     var ddata = [];
@@ -146,14 +146,14 @@ Afterquery.prototype.dataToGvizTable = function(grid, options) {
       var row = [];
       for (var coli in data[rowi]) {
         var cell = data[rowi][coli];
-        if (is_html && types[coli] === this.T_STRING) {
+        if (is_html && types[coli] === Afterquery.T_STRING) {
           cell = cell.toString();
-          var urlresult = this.looksLikeUrl(cell);
+          var urlresult = Afterquery.looksLikeUrl(cell);
           if (urlresult) {
             cell = '<a href="' + encodeURI(urlresult[0]) + '">' +
-                this.htmlEscape(urlresult[1]) + '</a>';
+                Afterquery.htmlEscape(urlresult[1]) + '</a>';
           } else {
-            cell = this.htmlEscape(cell);
+            cell = Afterquery.htmlEscape(cell);
           }
         }
         var col = { v: cell };
@@ -176,7 +176,7 @@ Afterquery.prototype.dataToGvizTable = function(grid, options) {
       var rowmin = [], rowmax = [];
       var colmin = [], colmax = [];
       for (var coli in grid.types) {
-        if (grid.types[coli] !== this.T_NUM) continue;
+        if (grid.types[coli] !== Afterquery.T_NUM) continue;
         for (var rowi in grid.data) {
           var cell = grid.data[rowi][coli];
           if (cell < (minval || 0)) minval = cell;
@@ -189,7 +189,7 @@ Afterquery.prototype.dataToGvizTable = function(grid, options) {
       }
 
       for (var coli in grid.types) {
-        if (grid.types[coli] == this.T_NUM) {
+        if (grid.types[coli] == Afterquery.T_NUM) {
           var formatter = new google.visualization.ColorFormat();
           var mn, mx;
           if (options.intensify == 'xy') {
@@ -217,14 +217,14 @@ Afterquery.prototype.dataToGvizTable = function(grid, options) {
 
 
 
-Afterquery.prototype.T_NUM = 'number';
-Afterquery.prototype.T_DATE = 'date';
-Afterquery.prototype.T_DATETIME = 'datetime';
-Afterquery.prototype.T_BOOL = 'boolean';
-Afterquery.prototype.T_STRING = 'string';
+Afterquery.T_NUM = 'number';
+Afterquery.T_DATE = 'date';
+Afterquery.T_DATETIME = 'datetime';
+Afterquery.T_BOOL = 'boolean';
+Afterquery.T_STRING = 'string';
 
 
-Afterquery.prototype.guessTypes = function(data) {
+Afterquery.guessTypes = function(data) {
     var CANT_NUM = 1;
     var CANT_BOOL = 2;
     var CANT_DATE = 4;
@@ -236,7 +236,7 @@ Afterquery.prototype.guessTypes = function(data) {
         impossible[coli] |= 0;
         var cell = row[coli];
         if (cell == '' || cell == null) continue;
-        var d = this.myParseDate(cell);
+        var d = Afterquery.myParseDate(cell);
         if (isNaN(d)) {
           impossible[coli] |= CANT_DATE | CANT_DATETIME;
         } else if (d.getHours() || d.getMinutes() || d.getSeconds()) {
@@ -255,22 +255,22 @@ Afterquery.prototype.guessTypes = function(data) {
     for (var coli in impossible) {
       var imp = impossible[coli];
       if (!(imp & CANT_BOOL)) {
-        types[coli] = this.T_BOOL;
+        types[coli] = Afterquery.T_BOOL;
       } else if (!(imp & CANT_DATE)) {
-        types[coli] = this.T_DATE;
+        types[coli] = Afterquery.T_DATE;
       } else if (!(imp & CANT_DATETIME)) {
-        types[coli] = this.T_DATETIME;
+        types[coli] = Afterquery.T_DATETIME;
       } else if (!(imp & CANT_NUM)) {
-        types[coli] = this.T_NUM;
+        types[coli] = Afterquery.T_NUM;
       } else {
-        types[coli] = this.T_STRING;
+        types[coli] = Afterquery.T_STRING;
       }
     }
     return types;
   };
 
 
-Afterquery.prototype.myParseDate = function(s) {
+Afterquery.myParseDate = function(s) {
     // We want to support various different date formats that people
     // tend to use as strings, with and without time of day,
     // including yyyy-mm-dd hh:mm:ss.mmm, yyyy/mm/dd, mm/dd/yyyy hh:mm PST, etc.
@@ -321,40 +321,40 @@ Afterquery.prototype.myParseDate = function(s) {
   };
 
 
-Afterquery.prototype.zpad = function(n, width) {
+Afterquery.zpad = function(n, width) {
     var s = '' + n;
     while (s.length < width) s = '0' + s;
     return s;
   };
 
 
-Afterquery.prototype.dateToStr = function(d) {
+Afterquery.dateToStr = function(d) {
     if (!d) return '';
     return (d.getFullYear() + '-' +
-            this.zpad(d.getMonth() + 1, 2) + '-' +
-            this.zpad(d.getDate(), 2));
+            Afterquery.zpad(d.getMonth() + 1, 2) + '-' +
+            Afterquery.zpad(d.getDate(), 2));
   };
 
 
-Afterquery.prototype.dateTimeToStr = function(d) {
+Afterquery.dateTimeToStr = function(d) {
     if (!d) return '';
     var msec = d.getMilliseconds();
-    return (this.dateToStr(d) + ' ' +
-            this.zpad(d.getHours(), 2) + ':' +
-            this.zpad(d.getMinutes(), 2) + ':' +
-            this.zpad(d.getSeconds(), 2) +
-            (msec ? ('.' + this.zpad(msec, 3)) : ''));
+    return (Afterquery.dateToStr(d) + ' ' +
+            Afterquery.zpad(d.getHours(), 2) + ':' +
+            Afterquery.zpad(d.getMinutes(), 2) + ':' +
+            Afterquery.zpad(d.getSeconds(), 2) +
+            (msec ? ('.' + Afterquery.zpad(msec, 3)) : ''));
   };
 
 
 Afterquery.prototype.convertTypes = function(data, types) {
     for (var coli in types) {
       var type = types[coli];
-      if (type === this.T_DATE || type === this.T_DATETIME) {
+      if (type === Afterquery.T_DATE || type === Afterquery.T_DATETIME) {
         for (var rowi in data) {
-          data[rowi][coli] = this.myParseDate(data[rowi][coli]);
+          data[rowi][coli] = Afterquery.myParseDate(data[rowi][coli]);
         }
-      } else if (type === this.T_NUM || type === this.T_BOOL) {
+      } else if (type === Afterquery.T_NUM || type === Afterquery.T_BOOL) {
         for (var rowi in data) {
           var v = data[rowi][coli];
           if (v != null && v != '') {
@@ -548,14 +548,14 @@ Afterquery.prototype.agg_funcs = {
       }
     }
   };
-Afterquery.prototype.agg_funcs.count.return_type = Afterquery.prototype.T_NUM;
-Afterquery.prototype.agg_funcs.count_nz.return_type = Afterquery.prototype.T_NUM;
-Afterquery.prototype.agg_funcs.count_distinct.return_type = Afterquery.prototype.T_NUM;
-Afterquery.prototype.agg_funcs.sum.return_type = Afterquery.prototype.T_NUM;
-Afterquery.prototype.agg_funcs.avg.return_type = Afterquery.prototype.T_NUM;
-Afterquery.prototype.agg_funcs.stddev.return_type = Afterquery.prototype.T_NUM;
-Afterquery.prototype.agg_funcs.cat.return_type = Afterquery.prototype. T_STRING;
-Afterquery.prototype.agg_funcs.color.return_type = Afterquery.prototype.T_NUM;
+Afterquery.prototype.agg_funcs.count.return_type = Afterquery.T_NUM;
+Afterquery.prototype.agg_funcs.count_nz.return_type = Afterquery.T_NUM;
+Afterquery.prototype.agg_funcs.count_distinct.return_type = Afterquery.T_NUM;
+Afterquery.prototype.agg_funcs.sum.return_type = Afterquery.T_NUM;
+Afterquery.prototype.agg_funcs.avg.return_type = Afterquery.T_NUM;
+Afterquery.prototype.agg_funcs.stddev.return_type = Afterquery.T_NUM;
+Afterquery.prototype.agg_funcs.cat.return_type = Afterquery.T_STRING;
+Afterquery.prototype.agg_funcs.color.return_type = Afterquery.T_NUM;
 
 
 Afterquery.prototype.groupBy = function(ingrid, keys, values) {
@@ -579,8 +579,8 @@ Afterquery.prototype.groupBy = function(ingrid, keys, values) {
         }
         var colnum = that.keyToColNum(ingrid, field);
         if (!func) {
-          if (ingrid.types[colnum] === that.T_NUM ||
-              ingrid.types[colnum] === that.T_BOOL) {
+          if (ingrid.types[colnum] === Afterquery.T_NUM ||
+              ingrid.types[colnum] === Afterquery.T_BOOL) {
             func = that.agg_funcs.sum;
           } else {
             func = that.agg_funcs.count;
@@ -685,10 +685,10 @@ Afterquery.prototype.pivotBy = function(ingrid, rowkeys, colkeys, valkeys) {
 
 
 Afterquery.prototype.stringifiedCol = function(value, typ) {
-    if (typ === this.T_DATE) {
-      return this.dateToStr(value) || '';
-    } else if (typ === this.T_DATETIME) {
-      return this.dateTimeToStr(value) || '';
+    if (typ === Afterquery.T_DATE) {
+      return Afterquery.dateToStr(value) || '';
+    } else if (typ === Afterquery.T_DATETIME) {
+      return Afterquery.dateTimeToStr(value) || '';
     } else {
       return (value + '') || '(none)';
     }
@@ -707,7 +707,7 @@ Afterquery.prototype.stringifiedCols = function(row, types) {
 Afterquery.prototype.treeJoinKeys = function(ingrid, nkeys) {
     var outgrid = {
         headers: ['_tree'].concat(ingrid.headers.slice(nkeys)),
-        types: [this.T_STRING].concat(ingrid.types.slice(nkeys)),
+        types: [Afterquery.T_STRING].concat(ingrid.types.slice(nkeys)),
         data: []
     };
 
@@ -801,7 +801,7 @@ Afterquery.prototype.crackTree = function(ingrid, key) {
       data: [],
       types:
         [].concat(ingrid.types.slice(0, keycol),
-                  [this.T_STRING, this.T_STRING],
+                  [Afterquery.T_STRING, Afterquery.T_STRING],
                   ingrid.types.slice(keycol + 1))
     };
 
@@ -967,11 +967,11 @@ Afterquery.prototype.filterBy = function(ingrid, key, op, values) {
     var keycol = this.keyToColNum(ingrid, key);
     var wantvals = [];
     for (var valuei in values) {
-      if (ingrid.types[keycol] === this.T_NUM) {
+      if (ingrid.types[keycol] === Afterquery.T_NUM) {
         wantvals.push(parseFloat(values[valuei]));
-      } else if (ingrid.types[keycol] === this.T_DATE ||
-                 ingrid.types[keycol] === this.T_DATETIME) {
-        wantvals.push(this.dateTimeToStr(this.myParseDate(values[valuei])));
+      } else if (ingrid.types[keycol] === Afterquery.T_DATE ||
+                 ingrid.types[keycol] === Afterquery.T_DATETIME) {
+        wantvals.push(Afterquery.dateTimeToStr(Afterquery.myParseDate(values[valuei])));
       } else {
         wantvals.push(values[valuei]);
       }
@@ -984,8 +984,8 @@ Afterquery.prototype.filterBy = function(ingrid, key, op, values) {
         cell = null;
       }
       var keytype = ingrid.types[keycol];
-      if (keytype == this.T_DATE || keytype == this.T_DATETIME) {
-        cell = this.dateTimeToStr(cell);
+      if (keytype == Afterquery.T_DATE || keytype == Afterquery.T_DATETIME) {
+        cell = Afterquery.dateTimeToStr(cell);
       }
       var found = 0;
       for (var valuei in wantvals) {
@@ -1109,7 +1109,7 @@ Afterquery.prototype.deltaBy = function(ingrid, keys) {
         var val = row[keycol];
         if (val == undefined) {
           continue;
-        } else if (outgrid.types[keycol] === this.T_NUM) {
+        } else if (outgrid.types[keycol] === Afterquery.T_NUM) {
           if (prev_val != undefined) {
             if (val > prev_val) {
               var new_val = val - prev_val;
@@ -1190,7 +1190,7 @@ Afterquery.prototype.orderBy = function(grid, keys) {
       for (var keyi in keycols) {
         var keycol = keycols[keyi][0], invert = keycols[keyi][1];
         var av = a[keycol], bv = b[keycol];
-        if (grid.types[keycol] === that.T_NUM) {
+        if (grid.types[keycol] === Afterquery.T_NUM) {
           av = parseFloat(av);
           bv = parseFloat(bv);
         }
@@ -1222,7 +1222,7 @@ Afterquery.prototype.extractRegexp = function(grid, colname, regexp) {
     var r = RegExp(regexp);
     var colnum = this.keyToColNum(grid, colname);
     var typ = grid.types[colnum];
-    grid.types[colnum] = this.T_STRING;
+    grid.types[colnum] = Afterquery.T_STRING;
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       var match = r.exec(this.stringifiedCol(row[colnum], typ));
@@ -1304,13 +1304,13 @@ Afterquery.prototype.yspread = function(grid) {
       var row = grid.data[rowi];
       var total = 0;
       for (var coli in row) {
-        if (grid.types[coli] == this.T_NUM && row[coli]) {
+        if (grid.types[coli] == Afterquery.T_NUM && row[coli]) {
           total += Math.abs(row[coli] * 1);
         }
       }
       if (!total) total = 1;
       for (var coli in row) {
-        if (grid.types[coli] == this.T_NUM && row[coli]) {
+        if (grid.types[coli] == Afterquery.T_NUM && row[coli]) {
           row[coli] = row[coli] * 1 / total;
         }
       }
@@ -1362,7 +1362,7 @@ Afterquery.prototype.fillNullsWithZero = function(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       for (var coli in row) {
-        if (grid.types[coli] === this.T_NUM && row[coli] == undefined) {
+        if (grid.types[coli] === Afterquery.T_NUM && row[coli] == undefined) {
           row[coli] = 0;
         }
       }
@@ -1560,7 +1560,7 @@ Afterquery.prototype.gridFromData = function(rawdata) {
     } else {
       throw new Error("don't know how to parse this json layout, sorry!");
     }
-    types = this.guessTypes(data);
+    types = Afterquery.guessTypes(data);
     this.convertTypes(data, types);
     return {headers: headers, data: data, types: types};
   };
@@ -1889,7 +1889,7 @@ Afterquery.prototype.addRenderers = function(queue, args) {
           charttype == 'traces+minmax') {
         datatable = grid;
       } else {
-        datatable = that.dataToGvizTable(grid, gridoptions);
+        datatable = Afterquery.dataToGvizTable(grid, gridoptions);
 
         var dateformat = new google.visualization.DateFormat({
           pattern: 'yyyy-MM-dd'
@@ -1898,9 +1898,9 @@ Afterquery.prototype.addRenderers = function(queue, args) {
           pattern: 'yyyy-MM-dd HH:mm:ss'
         });
         for (var coli = 0; coli < grid.types.length; coli++) {
-          if (grid.types[coli] === that.T_DATE) {
+          if (grid.types[coli] === Afterquery.T_DATE) {
             dateformat.format(datatable, coli);
-          } else if (grid.types[coli] === that.T_DATETIME) {
+          } else if (grid.types[coli] === Afterquery.T_DATETIME) {
             datetimeformat.format(datatable, coli);
           }
         }
@@ -1987,7 +1987,7 @@ Afterquery.prototype.finishQueue = function(queue, args, done) {
         var viewel = $('#step' + stepi + ' .grid');
         if (prevdata != grid.data) {
           var t = new google.visualization.Table(viewel[0]);
-          var datatable = this.dataToGvizTable({
+          var datatable = Afterquery.dataToGvizTable({
             headers: grid.headers,
             data: grid.data.slice(0, 1000),
             types: grid.types
@@ -2254,7 +2254,7 @@ Afterquery.prototype.addUrlGetters = function(queue, args, startdata) {
 
 
 Afterquery.prototype.exec = function(query, startdata, done) {
-    var args = this.parseArgs(query);
+    var args = Afterquery.parseArgs(query);
     var queue = [];
     this.addUrlGetters(queue, args, startdata);
     this.addTransforms(queue, args);
@@ -2263,7 +2263,7 @@ Afterquery.prototype.exec = function(query, startdata, done) {
 
 
 Afterquery.prototype.render = function(query, startdata, done) {
-    var args = this.parseArgs(query);
+    var args = Afterquery.parseArgs(query);
     var editlink = args.get('editlink');
     if (editlink == 0) {
       $('#editmenu').hide();
