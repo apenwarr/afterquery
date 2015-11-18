@@ -15,7 +15,7 @@
  */
 'use strict';
 
-var afterquery = (function() {
+/*
   // To appease v8shell
   var console, localStorage;
   try {
@@ -41,14 +41,22 @@ var afterquery = (function() {
       debug: function() {}
     };
   }
+  */
+
+function Afterquery() {
+
+  this.colormap = {};
+  this.next_color = 0;
+};
 
 
-  function err(s) {
+
+Afterquery.prototype.err = function(s) {
     $('#vizlog').append('\n' + s);
-  }
+  };
 
 
-  function showstatus(s, s2) {
+Afterquery.prototype.showstatus = function(s, s2) {
     $('#statustext').html(s);
     $('#statussub').text(s2 || '');
     if (s || s2) {
@@ -57,10 +65,10 @@ var afterquery = (function() {
     } else {
       $('#vizstatus').hide();
     }
-  }
+  };
 
 
-  function parseArgs(query) {
+Afterquery.prototype.parseArgs = function(query) {
     var kvlist;
     if (query.join) {
       // user provided an array of 'key=value' strings
@@ -87,12 +95,12 @@ var afterquery = (function() {
       get: function(key) { return out[key]; },
       all: outlist
     };
-  }
+  };
 
 
-  var IS_URL_RE = RegExp('^(http|https)://');
 
-  function looksLikeUrl(s) {
+Afterquery.prototype.looksLikeUrl = function(s) {
+    var IS_URL_RE = RegExp('^(http|https)://');
     var url, label;
     var pos = (s || '').lastIndexOf('|');
     if (pos >= 0) {
@@ -107,10 +115,10 @@ var afterquery = (function() {
     } else {
       return;
     }
-  }
+  };
 
 
-  function htmlEscape(s) {
+Afterquery.prototype.htmlEscape = function(s) {
     if (s == undefined) {
       return s;
     }
@@ -118,10 +126,10 @@ var afterquery = (function() {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/\n/g, '<br>\n');
-  }
+  };
 
 
-  function dataToGvizTable(grid, options) {
+Afterquery.prototype.dataToGvizTable = function(grid, options) {
     if (!options) options = {};
     var is_html = options.allowHtml;
     var headers = grid.headers, data = grid.data, types = grid.types;
@@ -130,7 +138,7 @@ var afterquery = (function() {
       dheaders.push({
         id: headers[i],
         label: headers[i],
-        type: (types[i] != T_BOOL || !options.bool_to_num) ? types[i] : T_NUM
+        type: (types[i] != this.T_BOOL || !options.bool_to_num) ? types[i] : this.T_NUM
       });
     }
     var ddata = [];
@@ -138,14 +146,14 @@ var afterquery = (function() {
       var row = [];
       for (var coli in data[rowi]) {
         var cell = data[rowi][coli];
-        if (is_html && types[coli] === T_STRING) {
+        if (is_html && types[coli] === this.T_STRING) {
           cell = cell.toString();
-          var urlresult = looksLikeUrl(cell);
+          var urlresult = this.looksLikeUrl(cell);
           if (urlresult) {
             cell = '<a href="' + encodeURI(urlresult[0]) + '">' +
-                htmlEscape(urlresult[1]) + '</a>';
+                this.htmlEscape(urlresult[1]) + '</a>';
           } else {
-            cell = htmlEscape(cell);
+            cell = this.htmlEscape(cell);
           }
         }
         var col = { v: cell };
@@ -168,7 +176,7 @@ var afterquery = (function() {
       var rowmin = [], rowmax = [];
       var colmin = [], colmax = [];
       for (var coli in grid.types) {
-        if (grid.types[coli] !== T_NUM) continue;
+        if (grid.types[coli] !== this.T_NUM) continue;
         for (var rowi in grid.data) {
           var cell = grid.data[rowi][coli];
           if (cell < (minval || 0)) minval = cell;
@@ -181,7 +189,7 @@ var afterquery = (function() {
       }
 
       for (var coli in grid.types) {
-        if (grid.types[coli] == T_NUM) {
+        if (grid.types[coli] == this.T_NUM) {
           var formatter = new google.visualization.ColorFormat();
           var mn, mx;
           if (options.intensify == 'xy') {
@@ -205,22 +213,22 @@ var afterquery = (function() {
       }
     }
     return datatable;
-  }
+  };
 
 
-  var CANT_NUM = 1;
-  var CANT_BOOL = 2;
-  var CANT_DATE = 4;
-  var CANT_DATETIME = 8;
 
-  var T_NUM = 'number';
-  var T_DATE = 'date';
-  var T_DATETIME = 'datetime';
-  var T_BOOL = 'boolean';
-  var T_STRING = 'string';
+Afterquery.prototype.T_NUM = 'number';
+Afterquery.prototype.T_DATE = 'date';
+Afterquery.prototype.T_DATETIME = 'datetime';
+Afterquery.prototype.T_BOOL = 'boolean';
+Afterquery.prototype.T_STRING = 'string';
 
 
-  function guessTypes(data) {
+Afterquery.prototype.guessTypes = function(data) {
+    var CANT_NUM = 1;
+    var CANT_BOOL = 2;
+    var CANT_DATE = 4;
+    var CANT_DATETIME = 8;
     var impossible = [];
     for (var rowi in data) {
       var row = data[rowi];
@@ -228,7 +236,7 @@ var afterquery = (function() {
         impossible[coli] |= 0;
         var cell = row[coli];
         if (cell == '' || cell == null) continue;
-        var d = myParseDate(cell);
+        var d = this.myParseDate(cell);
         if (isNaN(d)) {
           impossible[coli] |= CANT_DATE | CANT_DATETIME;
         } else if (d.getHours() || d.getMinutes() || d.getSeconds()) {
@@ -247,36 +255,36 @@ var afterquery = (function() {
     for (var coli in impossible) {
       var imp = impossible[coli];
       if (!(imp & CANT_BOOL)) {
-        types[coli] = T_BOOL;
+        types[coli] = this.T_BOOL;
       } else if (!(imp & CANT_DATE)) {
-        types[coli] = T_DATE;
+        types[coli] = this.T_DATE;
       } else if (!(imp & CANT_DATETIME)) {
-        types[coli] = T_DATETIME;
+        types[coli] = this.T_DATETIME;
       } else if (!(imp & CANT_NUM)) {
-        types[coli] = T_NUM;
+        types[coli] = this.T_NUM;
       } else {
-        types[coli] = T_STRING;
+        types[coli] = this.T_STRING;
       }
     }
     return types;
-  }
+  };
 
 
-  // We want to support various different date formats that people
-  // tend to use as strings, with and without time of day,
-  // including yyyy-mm-dd hh:mm:ss.mmm, yyyy/mm/dd, mm/dd/yyyy hh:mm PST, etc.
-  // This gets a little hairy because so many things are optional.
-  // We could try to support two-digit years or dd-mm-yyyy formats, but
-  // those create parser ambiguities, so let's avoid it.
-  var DATE_RE1 = RegExp(
-      '^(\\d{1,4})[-/](\\d{1,2})(?:[-/](\\d{1,4})' +
-      '(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d)(?:\\.(\\d+))?)?)?)?' +
-      '(?: \\w\\w\\w)?$');
-  // Some people (gviz, for example) provide "json" files where dates
-  // look like javascript Date() object declarations, eg.
-  // Date(2014,0,1,2,3,4)
-  var DATE_RE2 = /^Date\(([\d,]+)\)$/;
-  function myParseDate(s) {
+Afterquery.prototype.myParseDate = function(s) {
+    // We want to support various different date formats that people
+    // tend to use as strings, with and without time of day,
+    // including yyyy-mm-dd hh:mm:ss.mmm, yyyy/mm/dd, mm/dd/yyyy hh:mm PST, etc.
+    // This gets a little hairy because so many things are optional.
+    // We could try to support two-digit years or dd-mm-yyyy formats, but
+    // those create parser ambiguities, so let's avoid it.
+    var DATE_RE1 = RegExp(
+        '^(\\d{1,4})[-/](\\d{1,2})(?:[-/](\\d{1,4})' +
+        '(?:[T\\s](\\d{1,2}):(\\d\\d)(?::(\\d\\d)(?:\\.(\\d+))?)?)?)?' +
+        '(?: \\w\\w\\w)?$');
+    // Some people (gviz, for example) provide "json" files where dates
+    // look like javascript Date() object declarations, eg.
+    // Date(2014,0,1,2,3,4)
+    var DATE_RE2 = /^Date\(([\d,]+)\)$/;
     if (s == null) return s;
     if (s && s.getDate) return s;
 
@@ -310,43 +318,43 @@ var afterquery = (function() {
                       g[7] || 0);
     }
     return NaN;
-  }
+  };
 
 
-  function zpad(n, width) {
+Afterquery.prototype.zpad = function(n, width) {
     var s = '' + n;
     while (s.length < width) s = '0' + s;
     return s;
-  }
+  };
 
 
-  function dateToStr(d) {
+Afterquery.prototype.dateToStr = function(d) {
     if (!d) return '';
     return (d.getFullYear() + '-' +
-            zpad(d.getMonth() + 1, 2) + '-' +
-            zpad(d.getDate(), 2));
-  }
+            this.zpad(d.getMonth() + 1, 2) + '-' +
+            this.zpad(d.getDate(), 2));
+  };
 
 
-  function dateTimeToStr(d) {
+Afterquery.prototype.dateTimeToStr = function(d) {
     if (!d) return '';
     var msec = d.getMilliseconds();
-    return (dateToStr(d) + ' ' +
-            zpad(d.getHours(), 2) + ':' +
-            zpad(d.getMinutes(), 2) + ':' +
-            zpad(d.getSeconds(), 2) +
-            (msec ? ('.' + zpad(msec, 3)) : ''));
-  }
+    return (this.dateToStr(d) + ' ' +
+            this.zpad(d.getHours(), 2) + ':' +
+            this.zpad(d.getMinutes(), 2) + ':' +
+            this.zpad(d.getSeconds(), 2) +
+            (msec ? ('.' + this.zpad(msec, 3)) : ''));
+  };
 
 
-  function convertTypes(data, types) {
+Afterquery.prototype.convertTypes = function(data, types) {
     for (var coli in types) {
       var type = types[coli];
-      if (type === T_DATE || type === T_DATETIME) {
+      if (type === this.T_DATE || type === this.T_DATETIME) {
         for (var rowi in data) {
-          data[rowi][coli] = myParseDate(data[rowi][coli]);
+          data[rowi][coli] = this.myParseDate(data[rowi][coli]);
         }
-      } else if (type === T_NUM || type === T_BOOL) {
+      } else if (type === this.T_NUM || type === this.T_BOOL) {
         for (var rowi in data) {
           var v = data[rowi][coli];
           if (v != null && v != '') {
@@ -355,34 +363,35 @@ var afterquery = (function() {
         }
       }
     }
-  }
+  };
 
 
-  function colNameToColNum(grid, colname) {
+Afterquery.prototype.colNameToColNum = function(grid, colname) {
     var keycol = (colname == '*') ? 0 : grid.headers.indexOf(colname);
     if (keycol < 0) {
       throw new Error('unknown column name "' + colname + '"');
     }
     return keycol;
-  }
+  };
 
 
-  var FUNC_RE = /^(\w+)\((.*)\)$/;
-  function keyToColNum(grid, key) {
-    var g = FUNC_RE.exec(key);
+Afterquery.prototype.FUNC_RE = /^(\w+)\((.*)\)$/;
+
+Afterquery.prototype.keyToColNum = function(grid, key) {
+    var g = this.FUNC_RE.exec(key);
     if (g) {
-      return colNameToColNum(grid, g[2]);
+      return this.colNameToColNum(grid, g[2]);
     } else {
-      return colNameToColNum(grid, key);
+      return this.colNameToColNum(grid, key);
     }
-  }
+  };
 
 
-  function _groupByLoop(ingrid, keys, initval, addcols_func, putvalues_func) {
+Afterquery.prototype._groupByLoop = function(ingrid, keys, initval, addcols_func, putvalues_func) {
     var outgrid = {headers: [], data: [], types: []};
     var keycols = [];
     for (var keyi in keys) {
-      var colnum = keyToColNum(ingrid, keys[keyi]);
+      var colnum = this.keyToColNum(ingrid, keys[keyi]);
       keycols.push(colnum);
       outgrid.headers.push(ingrid.headers[colnum]);
       outgrid.types.push(ingrid.types[colnum]);
@@ -414,14 +423,9 @@ var afterquery = (function() {
       putvalues_func(outgrid, key, orow, row);
     }
     return outgrid;
-  }
+  };
 
-
-  var colormap = {};
-  var next_color = 0;
-
-
-  var agg_funcs = {
+Afterquery.prototype.agg_funcs = {
     first: function(l) {
       return l[0];
     },
@@ -500,7 +504,7 @@ var afterquery = (function() {
     },
 
     avg: function(l) {
-      return agg_funcs.sum(l) / agg_funcs.count_nz(l);
+      return Afterquery.prototype.agg_funcs.sum(l) / Afterquery.prototype.agg_funcs.count_nz(l);
     },
 
     // also works for non-numeric values, as long as they're sortable
@@ -525,7 +529,7 @@ var afterquery = (function() {
     },
 
     stddev: function(l) {
-      var avg = agg_funcs.avg(l);
+      var avg = Afterquery.prototype.agg_funcs.avg(l);
       var sumsq = 0.0;
       for (var i in l) {
         var d = parseFloat(l[i]) - avg;
@@ -537,33 +541,34 @@ var afterquery = (function() {
     color: function(l) {
       for (var i in l) {
         var v = l[i];
-        if (!(v in colormap)) {
-          colormap[v] = ++next_color;
+        if (!(v in this.colormap)) { // TODO: Doomed this?
+          this.colormap[v] = ++this.next_color;
         }
-        return colormap[v];
+        return this.colormap[v];
       }
     }
   };
-  agg_funcs.count.return_type = T_NUM;
-  agg_funcs.count_nz.return_type = T_NUM;
-  agg_funcs.count_distinct.return_type = T_NUM;
-  agg_funcs.sum.return_type = T_NUM;
-  agg_funcs.avg.return_type = T_NUM;
-  agg_funcs.stddev.return_type = T_NUM;
-  agg_funcs.cat.return_type = T_STRING;
-  agg_funcs.color.return_type = T_NUM;
+Afterquery.prototype.agg_funcs.count.return_type = Afterquery.prototype.T_NUM;
+Afterquery.prototype.agg_funcs.count_nz.return_type = Afterquery.prototype.T_NUM;
+Afterquery.prototype.agg_funcs.count_distinct.return_type = Afterquery.prototype.T_NUM;
+Afterquery.prototype.agg_funcs.sum.return_type = Afterquery.prototype.T_NUM;
+Afterquery.prototype.agg_funcs.avg.return_type = Afterquery.prototype.T_NUM;
+Afterquery.prototype.agg_funcs.stddev.return_type = Afterquery.prototype.T_NUM;
+Afterquery.prototype.agg_funcs.cat.return_type = Afterquery.prototype. T_STRING;
+Afterquery.prototype.agg_funcs.color.return_type = Afterquery.prototype.T_NUM;
 
 
-  function groupBy(ingrid, keys, values) {
+Afterquery.prototype.groupBy = function(ingrid, keys, values) {
     // add one value column for every column listed in values.
+    var that = this;
     var valuecols = [];
     var valuefuncs = [];
     var addcols_func = function(outgrid) {
       for (var valuei in values) {
-        var g = FUNC_RE.exec(values[valuei]);
+        var g = that.FUNC_RE.exec(values[valuei]);
         var field, func;
         if (g) {
-          func = agg_funcs[g[1]];
+          func = that.agg_funcs[g[1]];
           if (!func) {
             throw new Error('unknown aggregation function "' + g[1] + '"');
           }
@@ -572,13 +577,13 @@ var afterquery = (function() {
           func = null;
           field = values[valuei];
         }
-        var colnum = keyToColNum(ingrid, field);
+        var colnum = that.keyToColNum(ingrid, field);
         if (!func) {
-          if (ingrid.types[colnum] === T_NUM ||
-              ingrid.types[colnum] === T_BOOL) {
-            func = agg_funcs.sum;
+          if (ingrid.types[colnum] === that.T_NUM ||
+              ingrid.types[colnum] === that.T_BOOL) {
+            func = that.agg_funcs.sum;
           } else {
-            func = agg_funcs.count;
+            func = that.agg_funcs.count;
           }
         }
         valuecols.push(colnum);
@@ -602,7 +607,7 @@ var afterquery = (function() {
       }
     };
 
-    var outgrid = _groupByLoop(ingrid, keys, 0,
+    var outgrid = this._groupByLoop(ingrid, keys, 0,
                                addcols_func, putvalues_func);
 
     for (var rowi in outgrid.data) {
@@ -615,17 +620,18 @@ var afterquery = (function() {
     }
 
     return outgrid;
-  }
+  };
 
 
-  function pivotBy(ingrid, rowkeys, colkeys, valkeys) {
+Afterquery.prototype.pivotBy = function(ingrid, rowkeys, colkeys, valkeys) {
     // We generate a list of value columns based on all the unique combinations
     // of (values in colkeys)*(column names in valkeys)
+    var that = this;
     var valuecols = {};
     var colkey_outcols = {};
     var colkey_incols = [];
     for (var coli in colkeys) {
-      colkey_incols.push(keyToColNum(ingrid, colkeys[coli]));
+      colkey_incols.push(this.keyToColNum(ingrid, colkeys[coli]));
     }
     var addcols_func = function(outgrid) {
       for (var rowi in ingrid.data) {
@@ -633,7 +639,7 @@ var afterquery = (function() {
         var colkey = [];
         for (var coli in colkey_incols) {
           var colnum = colkey_incols[coli];
-          colkey.push(stringifiedCol(row[colnum], ingrid.types[colnum]));
+          colkey.push(that.stringifiedCol(row[colnum], ingrid.types[colnum]));
         }
         for (var coli in valkeys) {
           var xcolkey = colkey.concat([valkeys[coli]]);
@@ -663,7 +669,7 @@ var afterquery = (function() {
       var colkey = [];
       for (var coli in colkey_incols) {
         var colnum = colkey_incols[coli];
-        colkey.push(stringifiedCol(row[colnum], ingrid.types[colnum]));
+        colkey.push(that.stringifiedCol(row[colnum], ingrid.types[colnum]));
       }
       for (var coli in valkeys) {
         var xcolkey = colkey.concat([valkeys[coli]]);
@@ -673,57 +679,57 @@ var afterquery = (function() {
       }
     };
 
-    return _groupByLoop(ingrid, rowkeys, undefined,
+    return this._groupByLoop(ingrid, rowkeys, undefined,
                         addcols_func, putvalues_func);
-  }
+  };
 
 
-  function stringifiedCol(value, typ) {
-    if (typ === T_DATE) {
-      return dateToStr(value) || '';
-    } else if (typ === T_DATETIME) {
-      return dateTimeToStr(value) || '';
+Afterquery.prototype.stringifiedCol = function(value, typ) {
+    if (typ === this.T_DATE) {
+      return this.dateToStr(value) || '';
+    } else if (typ === this.T_DATETIME) {
+      return this.dateTimeToStr(value) || '';
     } else {
       return (value + '') || '(none)';
     }
-  }
+  };
 
 
-  function stringifiedCols(row, types) {
+Afterquery.prototype.stringifiedCols = function(row, types) {
     var out = [];
     for (var coli in types) {
-      out.push(stringifiedCol(row[coli], types[coli]));
+      out.push(this.stringifiedCol(row[coli], types[coli]));
     }
     return out;
-  }
+  };
 
 
-  function treeJoinKeys(ingrid, nkeys) {
+Afterquery.prototype.treeJoinKeys = function(ingrid, nkeys) {
     var outgrid = {
         headers: ['_tree'].concat(ingrid.headers.slice(nkeys)),
-        types: [T_STRING].concat(ingrid.types.slice(nkeys)),
+        types: [this.T_STRING].concat(ingrid.types.slice(nkeys)),
         data: []
     };
 
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
       var key = row.slice(0, nkeys);
-      var newkey = stringifiedCols(row.slice(0, nkeys),
+      var newkey = this.stringifiedCols(row.slice(0, nkeys),
                                    ingrid.types.slice(0, nkeys)).join('|');
       outgrid.data.push([newkey].concat(row.slice(nkeys)));
     }
     return outgrid;
-  }
+  };
 
 
-  function finishTree(ingrid, keys) {
+Afterquery.prototype.finishTree = function(ingrid, keys) {
     if (keys.length < 1) {
       keys = ['_tree'];
     }
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     var keycols = [];
     for (var keyi in keys) {
-      keycols.push(keyToColNum(ingrid, keys[keyi]));
+      keycols.push(this.keyToColNum(ingrid, keys[keyi]));
     }
 
     var seen = {};
@@ -762,14 +768,14 @@ var afterquery = (function() {
     }
 
     return outgrid;
-  }
+  };
 
 
-  function invertTree(ingrid, key) {
+Afterquery.prototype.invertTree = function(ingrid, key) {
     if (!key) {
       key = '_tree';
     }
-    var keycol = keyToColNum(ingrid, key);
+    var keycol = this.keyToColNum(ingrid, key);
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
@@ -779,14 +785,14 @@ var afterquery = (function() {
       outgrid.data.push(outrow);
     }
     return outgrid;
-  }
+  };
 
 
-  function crackTree(ingrid, key) {
+Afterquery.prototype.crackTree = function(ingrid, key) {
     if (!key) {
       key = '_tree';
     }
-    var keycol = keyToColNum(ingrid, key);
+    var keycol = this.keyToColNum(ingrid, key);
     var outgrid = {
       headers:
         [].concat(ingrid.headers.slice(0, keycol),
@@ -795,7 +801,7 @@ var afterquery = (function() {
       data: [],
       types:
         [].concat(ingrid.types.slice(0, keycol),
-                  [T_STRING, T_STRING],
+                  [this.T_STRING, this.T_STRING],
                   ingrid.types.slice(keycol + 1))
     };
 
@@ -819,21 +825,21 @@ var afterquery = (function() {
                                   row.slice(keycol + 1)));
    }
     return outgrid;
-  }
+  };
 
 
-  function splitNoEmpty(s, splitter) {
+Afterquery.prototype.splitNoEmpty = function(s, splitter) {
     if (!s) return [];
     return s.split(splitter);
-  }
+  };
 
 
-  function keysOtherThan(grid, keys) {
+Afterquery.prototype.keysOtherThan = function(grid, keys) {
     var out = [];
     var keynames = [];
     for (var keyi in keys) {
       // this converts func(x) notation to just 'x'
-      keynames.push(grid.headers[keyToColNum(grid, keys[keyi])]);
+      keynames.push(grid.headers[this.keyToColNum(grid, keys[keyi])]);
     }
     for (var coli in grid.headers) {
       if (keynames.indexOf(grid.headers[coli]) < 0) {
@@ -841,23 +847,23 @@ var afterquery = (function() {
       }
     }
     return out;
-  }
+  };
 
 
-  function doGroupBy(grid, argval) {
+Afterquery.prototype.doGroupBy = function(grid, argval) {
     console.debug('groupBy:', argval);
     var parts = argval.split(';', 2);
-    var keys = splitNoEmpty(parts[0], ',');
+    var keys = this.splitNoEmpty(parts[0], ',');
     var values;
     if (parts.length >= 2) {
       // if there's a ';' separator, the names after it are the desired
       // value columns (and that list may be empty).
-      var tmpvalues = splitNoEmpty(parts[1], ',');
+      var tmpvalues = this.splitNoEmpty(parts[1], ',');
       values = [];
       for (var tmpi in tmpvalues) {
         var tmpval = tmpvalues[tmpi];
         if (tmpval == '*') {
-          values = values.concat(keysOtherThan(grid, keys.concat(values)));
+          values = values.concat(this.keysOtherThan(grid, keys.concat(values)));
         } else {
           values.push(tmpval);
         }
@@ -865,107 +871,107 @@ var afterquery = (function() {
     } else {
       // if there is no ';' at all, the default is to just pull in all the
       // remaining non-key columns as values.
-      values = keysOtherThan(grid, keys);
+      values = this.keysOtherThan(grid, keys);
     }
     console.debug('grouping by', keys, values);
-    grid = groupBy(grid, keys, values);
+    grid = this.groupBy(grid, keys, values);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function doTreeGroupBy(grid, argval) {
+Afterquery.prototype.doTreeGroupBy = function(grid, argval) {
     console.debug('treeGroupBy:', argval);
     var parts = argval.split(';', 2);
-    var keys = splitNoEmpty(parts[0], ',');
+    var keys = this.splitNoEmpty(parts[0], ',');
     var values;
     if (parts.length >= 2) {
       // if there's a ';' separator, the names after it are the desired
       // value columns (and that list may be empty).
-      values = splitNoEmpty(parts[1], ',');
+      values = this.splitNoEmpty(parts[1], ',');
     } else {
       // if there is no ';' at all, the default is to just pull in all the
       // remaining non-key columns as values.
-      values = keysOtherThan(grid, keys);
+      values = this.keysOtherThan(grid, keys);
     }
     console.debug('treegrouping by', keys, values);
-    grid = groupBy(grid, keys, values);
-    grid = treeJoinKeys(grid, keys.length);
+    grid = this.groupBy(grid, keys, values);
+    grid = this.treeJoinKeys(grid, keys.length);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function doFinishTree(grid, argval) {
+Afterquery.prototype.doFinishTree = function(grid, argval) {
     console.debug('finishTree:', argval);
-    var keys = splitNoEmpty(argval, ',');
+    var keys = this.splitNoEmpty(argval, ',');
     console.debug('finishtree with keys', keys);
-    grid = finishTree(grid, keys);
+    grid = this.finishTree(grid, keys);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function doInvertTree(grid, argval) {
+Afterquery.prototype.doInvertTree = function(grid, argval) {
     console.debug('invertTree:', argval);
-    var keys = splitNoEmpty(argval, ',');
+    var keys = this.splitNoEmpty(argval, ',');
     console.debug('invertTree with key', keys[0]);
-    grid = invertTree(grid, keys[0]);
+    grid = this.invertTree(grid, keys[0]);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function doCrackTree(grid, argval) {
+Afterquery.prototype.doCrackTree = function(grid, argval) {
     console.debug('crackTree:', argval);
-    var keys = splitNoEmpty(argval, ',');
+    var keys = this.splitNoEmpty(argval, ',');
     console.debug('cracktree with key', keys[0]);
-    grid = crackTree(grid, keys[0]);
+    grid = this.crackTree(grid, keys[0]);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function doPivotBy(grid, argval) {
+Afterquery.prototype.doPivotBy = function(grid, argval) {
     console.debug('pivotBy:', argval);
 
     // the parts are rowkeys;colkeys;values
     var parts = argval.split(';', 3);
-    var rowkeys = splitNoEmpty(parts[0], ',');
-    var colkeys = splitNoEmpty(parts[1], ',');
+    var rowkeys = this.splitNoEmpty(parts[0], ',');
+    var colkeys = this.splitNoEmpty(parts[1], ',');
     var values;
     if (parts.length >= 3) {
       // if there's a second ';' separator, the names after it are the desired
       // value columns.
-      values = splitNoEmpty(parts[2], ',');
+      values = this.splitNoEmpty(parts[2], ',');
     } else {
       // if there is no second ';' at all, the default is to just pull
       // in all the remaining non-key columns as values.
-      values = keysOtherThan(grid, rowkeys.concat(colkeys));
+      values = this.keysOtherThan(grid, rowkeys.concat(colkeys));
     }
 
     // first group by the rowkeys+colkeys, so there is only one row for each
     // unique rowkeys+colkeys combination.
-    grid = groupBy(grid, rowkeys.concat(colkeys), values);
+    grid = this.groupBy(grid, rowkeys.concat(colkeys), values);
     console.debug('tmpgrid:', grid);
 
     // now actually do the pivot.
-    grid = pivotBy(grid, rowkeys, colkeys, values);
+    grid = this.pivotBy(grid, rowkeys, colkeys, values);
 
     return grid;
-  }
+  };
 
 
-  function filterBy(ingrid, key, op, values) {
+Afterquery.prototype.filterBy = function(ingrid, key, op, values) {
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
-    var keycol = keyToColNum(ingrid, key);
+    var keycol = this.keyToColNum(ingrid, key);
     var wantvals = [];
     for (var valuei in values) {
-      if (ingrid.types[keycol] === T_NUM) {
+      if (ingrid.types[keycol] === this.T_NUM) {
         wantvals.push(parseFloat(values[valuei]));
-      } else if (ingrid.types[keycol] === T_DATE ||
-                 ingrid.types[keycol] === T_DATETIME) {
-        wantvals.push(dateTimeToStr(myParseDate(values[valuei])));
+      } else if (ingrid.types[keycol] === this.T_DATE ||
+                 ingrid.types[keycol] === this.T_DATETIME) {
+        wantvals.push(this.dateTimeToStr(this.myParseDate(values[valuei])));
       } else {
         wantvals.push(values[valuei]);
       }
@@ -978,8 +984,8 @@ var afterquery = (function() {
         cell = null;
       }
       var keytype = ingrid.types[keycol];
-      if (keytype == T_DATE || keytype == T_DATETIME) {
-        cell = dateTimeToStr(cell);
+      if (keytype == this.T_DATE || keytype == this.T_DATETIME) {
+        cell = this.dateTimeToStr(cell);
       }
       var found = 0;
       for (var valuei in wantvals) {
@@ -1005,10 +1011,10 @@ var afterquery = (function() {
       if (found) outgrid.data.push(row);
     }
     return outgrid;
-  }
+  };
 
 
-  function trySplitOne(argval, splitstr) {
+Afterquery.prototype.trySplitOne = function(argval, splitstr) {
     var pos = argval.indexOf(splitstr);
     if (pos >= 0) {
       return [argval.substr(0, pos).trim(),
@@ -1016,29 +1022,29 @@ var afterquery = (function() {
     } else {
       return;
     }
-  }
+  };
 
 
-  function doFilterBy(grid, argval) {
+Afterquery.prototype.doFilterBy = function(grid, argval) {
     console.debug('filterBy:', argval);
     var ops = ['>=', '<=', '==', '!=', '<>', '>', '<', '='];
     var parts;
     for (var opi in ops) {
       var op = ops[opi];
-      if ((parts = trySplitOne(argval, op))) {
+      if ((parts = this.trySplitOne(argval, op))) {
         var matches = parts[1].split(',');
         console.debug('filterBy parsed:', parts[0], op, matches);
-        grid = filterBy(grid, parts[0], op, matches);
+        grid = this.filterBy(grid, parts[0], op, matches);
         console.debug('grid:', grid);
         return grid;
       }
     }
     throw new Error('unknown filter operation in "' + argval + '"');
     return grid;
-  }
+  };
 
 
-  function queryBy(ingrid, words) {
+Afterquery.prototype.queryBy = function(ingrid, words) {
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
@@ -1067,18 +1073,18 @@ var afterquery = (function() {
       }
     }
     return outgrid;
-  }
+  };
 
 
-  function doQueryBy(grid, argval) {
+Afterquery.prototype.doQueryBy = function(grid, argval) {
     console.debug('queryBy:', argval);
-    grid = queryBy(grid, argval.split(','));
+    grid = this.queryBy(grid, argval.split(','));
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function deltaBy(ingrid, keys) {
+Afterquery.prototype.deltaBy = function(ingrid, keys) {
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     for (var rowi = 0; rowi < ingrid.data.length; rowi++) {
       var row = ingrid.data[rowi];
@@ -1088,7 +1094,7 @@ var afterquery = (function() {
     var keycols = [];
     for (var keyi in keys) {
       var key = keys[keyi];
-      keycols.push(keyToColNum(ingrid, key));
+      keycols.push(this.keyToColNum(ingrid, key));
     }
 
     if (outgrid.data.length < 2) {
@@ -1103,7 +1109,7 @@ var afterquery = (function() {
         var val = row[keycol];
         if (val == undefined) {
           continue;
-        } else if (outgrid.types[keycol] === T_NUM) {
+        } else if (outgrid.types[keycol] === this.T_NUM) {
           if (prev_val != undefined) {
             if (val > prev_val) {
               var new_val = val - prev_val;
@@ -1118,23 +1124,23 @@ var afterquery = (function() {
     }
 
     return outgrid;
-  }
+  };
 
 
-  function doDeltaBy(grid, argval) {
+Afterquery.prototype.doDeltaBy = function(grid, argval) {
     console.debug('deltaBy:', argval);
-    grid = deltaBy(grid, argval.split(','));
+    grid = this.deltaBy(grid, argval.split(','));
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function unselectBy(ingrid, keys) {
+Afterquery.prototype.unselectBy = function(ingrid, keys) {
     var outgrid = {headers: [], data: [], types: []};
     var keycols = {};
     for (var keyi in keys) {
       var key = keys[keyi];
-      var col = keyToColNum(ingrid, key);
+      var col = this.keyToColNum(ingrid, key);
       keycols[col] = true;
     }
 
@@ -1156,18 +1162,19 @@ var afterquery = (function() {
     }
 
     return outgrid;
-  }
+  };
 
 
-  function doUnselectBy(grid, argval) {
+Afterquery.prototype.doUnselectBy = function(grid, argval) {
     console.debug('unselectBy:', argval);
-    grid = unselectBy(grid, argval.split(','));
+    grid = this.unselectBy(grid, argval.split(','));
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function orderBy(grid, keys) {
+Afterquery.prototype.orderBy = function(grid, keys) {
+    var that = this;
     var keycols = [];
     for (var keyi in keys) {
       var key = keys[keyi];
@@ -1176,14 +1183,14 @@ var afterquery = (function() {
         invert = -1;
         key = key.substr(1);
       }
-      keycols.push([keyToColNum(grid, key), invert]);
+      keycols.push([this.keyToColNum(grid, key), invert]);
     }
     console.debug('sort keycols', keycols);
     var comparator = function(a, b) {
       for (var keyi in keycols) {
         var keycol = keycols[keyi][0], invert = keycols[keyi][1];
         var av = a[keycol], bv = b[keycol];
-        if (grid.types[keycol] === T_NUM) {
+        if (grid.types[keycol] === that.T_NUM) {
           av = parseFloat(av);
           bv = parseFloat(bv);
         }
@@ -1200,25 +1207,25 @@ var afterquery = (function() {
     var outdata = grid.data.concat();
     outdata.sort(comparator);
     return { headers: grid.headers, data: outdata, types: grid.types };
-  }
+  };
 
 
-  function doOrderBy(grid, argval) {
+Afterquery.prototype.doOrderBy = function(grid, argval) {
     console.debug('orderBy:', argval);
-    grid = orderBy(grid, argval.split(','));
+    grid = this.orderBy(grid, argval.split(','));
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function extractRegexp(grid, colname, regexp) {
+Afterquery.prototype.extractRegexp = function(grid, colname, regexp) {
     var r = RegExp(regexp);
-    var colnum = keyToColNum(grid, colname);
+    var colnum = this.keyToColNum(grid, colname);
     var typ = grid.types[colnum];
-    grid.types[colnum] = T_STRING;
+    grid.types[colnum] = this.T_STRING;
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
-      var match = r.exec(stringifiedCol(row[colnum], typ));
+      var match = r.exec(this.stringifiedCol(row[colnum], typ));
       if (match) {
         row[colnum] = match.slice(1).join('');
       } else {
@@ -1226,24 +1233,24 @@ var afterquery = (function() {
       }
     }
     return grid;
-  }
+  };
 
 
-  function doExtractRegexp(grid, argval) {
+Afterquery.prototype.doExtractRegexp = function(grid, argval) {
     console.debug('extractRegexp:', argval);
-    var parts = trySplitOne(argval, '=');
+    var parts = this.trySplitOne(argval, '=');
     var colname = parts[0], regexp = parts[1];
     if (regexp.indexOf('(') < 0) {
       throw new Error('extract_regexp should have at least one (regex group)');
     }
-    grid = extractRegexp(grid, colname, regexp);
+    grid = this.extractRegexp(grid, colname, regexp);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function quantize(grid, colname, quants) {
-    var colnum = keyToColNum(grid, colname);
+Afterquery.prototype.quantize = function(grid, colname, quants) {
+    var colnum = this.keyToColNum(grid, colname);
     if (quants.length == 0) {
       throw new Error('quantize needs a bin size or list of edges');
     } else if (quants.length == 1) {
@@ -1279,51 +1286,51 @@ var afterquery = (function() {
       }
     }
     return grid;
-  }
+  };
 
 
-  function doQuantize(grid, argval) {
+Afterquery.prototype.doQuantize = function(grid, argval) {
     console.debug('quantize:', argval);
-    var parts = trySplitOne(argval, '=');
+    var parts = this.trySplitOne(argval, '=');
     var colname = parts[0], quants = parts[1].split(',');
-    grid = quantize(grid, colname, quants);
+    grid = this.quantize(grid, colname, quants);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function yspread(grid) {
+Afterquery.prototype.yspread = function(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       var total = 0;
       for (var coli in row) {
-        if (grid.types[coli] == T_NUM && row[coli]) {
+        if (grid.types[coli] == this.T_NUM && row[coli]) {
           total += Math.abs(row[coli] * 1);
         }
       }
       if (!total) total = 1;
       for (var coli in row) {
-        if (grid.types[coli] == T_NUM && row[coli]) {
+        if (grid.types[coli] == this.T_NUM && row[coli]) {
           row[coli] = row[coli] * 1 / total;
         }
       }
     }
     return grid;
-  }
+  };
 
 
-  function doYSpread(grid, argval) {
+Afterquery.prototype.doYSpread = function(grid, argval) {
     console.debug('yspread:', argval);
     if (argval) {
       throw new Error('yspread: no argument expected');
     }
-    grid = yspread(grid);
+    grid = this.yspread(grid);
     console.debug('grid:', grid);
     return grid;
-  }
+  };
 
 
-  function doLimit(ingrid, limit) {
+Afterquery.prototype.doLimit = function(ingrid, limit) {
     limit = parseInt(limit);
     if (ingrid.data.length > limit) {
       return {
@@ -1334,10 +1341,10 @@ var afterquery = (function() {
     } else {
       return ingrid;
     }
-  }
+  };
 
 
-  function limitDecimalPrecision(grid) {
+Afterquery.prototype.limitDecimalPrecision = function(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       for (var coli in row) {
@@ -1348,105 +1355,105 @@ var afterquery = (function() {
       }
     }
     return grid;
-  }
+  };
 
 
-  function fillNullsWithZero(grid) {
+Afterquery.prototype.fillNullsWithZero = function(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       for (var coli in row) {
-        if (grid.types[coli] === T_NUM && row[coli] == undefined) {
+        if (grid.types[coli] === this.T_NUM && row[coli] == undefined) {
           row[coli] = 0;
         }
       }
     }
     return grid;
-  }
+  };
 
 
-  function isString(v) {
+Afterquery.prototype.isString = function(v) {
     return v.charAt !== undefined;
-  }
+  };
 
 
-  function isArray(v) {
+Afterquery.prototype.isArray = function(v) {
     return v.splice !== undefined;
-  }
+  };
 
 
-  function isObject(v) {
+Afterquery.prototype.isObject = function(v) {
     return typeof(v) === 'object';
-  }
+  };
 
 
-  function isDate(v) {
+Afterquery.prototype.isDate = function(v) {
     return v.getDate !== undefined;
-  }
+  };
 
 
-  function isScalar(v) {
-    return v == undefined || isString(v) || !isObject(v) || isDate(v);
-  }
+Afterquery.prototype.isScalar = function(v) {
+    return v == undefined || this.isString(v) || !this.isObject(v) || this.isDate(v);
+  };
 
 
-  function check2d(rawdata) {
-    if (!isArray(rawdata)) return false;
+Afterquery.prototype.check2d = function(rawdata) {
+    if (!this.isArray(rawdata)) return false;
     for (var rowi = 0; rowi < rawdata.length && rowi < 5; rowi++) {
       var row = rawdata[rowi];
-      if (!isArray(row)) return false;
+      if (!this.isArray(row)) return false;
       for (var coli = 0; coli < row.length; coli++) {
         var col = row[coli];
-        if (!isScalar(col)) return false;
+        if (!this.isScalar(col)) return false;
       }
     }
     return true;
-  }
+  };
 
 
-  function _copyObj(out, v) {
+Afterquery.prototype._copyObj = function(out, v) {
     for (var key in v) {
       out[key] = v[key];
     }
     return out;
-  }
+  };
 
 
-  function copyObj(v) {
-    return _copyObj({}, v);
-  }
+Afterquery.prototype.copyObj = function(v) {
+    return this._copyObj({}, v);
+  };
 
 
-  function multiplyLists(out, l1, l2) {
+Afterquery.prototype.multiplyLists = function(out, l1, l2) {
     if (l1 === undefined) throw new Error('l1 undefined');
     if (l2 === undefined) throw new Error('l2 undefined');
     for (var l1i in l1) {
       var r1 = l1[l1i];
       for (var l2i in l2) {
         var r2 = l2[l2i];
-        var o = copyObj(r1);
-        _copyObj(o, r2);
+        var o = this.copyObj(r1);
+        this._copyObj(o, r2);
         out.push(o);
       }
     }
     return out;
-  }
+  };
 
 
-  function flattenDict(headers, coldict, rowtmp, d) {
+Afterquery.prototype.flattenDict = function(headers, coldict, rowtmp, d) {
     var out = [];
     var lists = [];
     for (var key in d) {
       var value = d[key];
-      if (isScalar(value)) {
+      if (this.isScalar(value)) {
         if (coldict[key] === undefined) {
           coldict[key] = headers.length;
           headers.push(key);
         }
         rowtmp[key] = value;
-      } else if (isArray(value)) {
-        lists.push(flattenList(headers, coldict, value));
+      } else if (this.isArray(value)) {
+        lists.push(this.flattenList(headers, coldict, value));
       } else {
-        lists.push(flattenDict(headers, coldict, rowtmp, value));
+        lists.push(this.flattenDict(headers, coldict, rowtmp, value));
       }
     }
 
@@ -1454,29 +1461,29 @@ var afterquery = (function() {
     var tmp1 = [{}];
     while (lists.length) {
       var tmp2 = [];
-      multiplyLists(tmp2, tmp1, lists.shift());
+      this.multiplyLists(tmp2, tmp1, lists.shift());
       tmp1 = tmp2;
     }
 
     // this is apparently the "right" way to append a list to a list.
     Array.prototype.push.apply(out, tmp1);
     return out;
-  }
+  };
 
 
-  function flattenList(headers, coldict, rows) {
+Afterquery.prototype.flattenList = function(headers, coldict, rows) {
     var out = [];
     for (var rowi in rows) {
       var row = rows[rowi];
       var rowtmp = {};
-      var sublist = flattenDict(headers, coldict, rowtmp, row);
-      multiplyLists(out, [rowtmp], sublist);
+      var sublist = this.flattenDict(headers, coldict, rowtmp, row);
+      this.multiplyLists(out, [rowtmp], sublist);
     }
     return out;
-  }
+  };
 
 
-  function gridFromData(rawdata) {
+Afterquery.prototype.gridFromData = function(rawdata) {
     if (rawdata && rawdata.headers && rawdata.data && rawdata.types) {
       // already in grid format
       return rawdata;
@@ -1527,12 +1534,12 @@ var afterquery = (function() {
         headers.push(col.caption || col);
       }
       data = rawdata.data;
-    } else if (check2d(rawdata)) {
+    } else if (this.check2d(rawdata)) {
       // simple [[cols...]...] (two-dimensional array) format, where
       // the first row is the headers.
       headers = rawdata[0];
       data = rawdata.slice(1);
-    } else if (isArray(rawdata)) {
+    } else if (this.isArray(rawdata)) {
       // assume datacube format, which is a nested set of lists and dicts.
       // A dict contains a list of key (column name) and value (cell content)
       // pairs.  A list contains a set of lists or dicts, which corresponds
@@ -1540,7 +1547,7 @@ var afterquery = (function() {
       // replicate the row once for each element in the list.
       var coldict = {};
       headers = [];
-      var rowdicts = flattenList(headers, coldict, rawdata);
+      var rowdicts = this.flattenList(headers, coldict, rawdata);
       data = [];
       for (var rowi in rowdicts) {
         var rowdict = rowdicts[rowi];
@@ -1553,18 +1560,18 @@ var afterquery = (function() {
     } else {
       throw new Error("don't know how to parse this json layout, sorry!");
     }
-    types = guessTypes(data);
-    convertTypes(data, types);
+    types = this.guessTypes(data);
+    this.convertTypes(data, types);
     return {headers: headers, data: data, types: types};
-  }
+  };
 
 
-  function enqueue(queue, stepname, func) {
+Afterquery.prototype.enqueue = function(queue, stepname, func) {
     queue.push([stepname, func]);
-  }
+  };
 
 
-  function runqueue(queue, ingrid, done, showstatus, wrap_each, after_each) {
+Afterquery.prototype.runqueue = function(queue, ingrid, done, showstatus, wrap_each, after_each) {
     var step = function(i) {
       if (i < queue.length) {
         var el = queue[i];
@@ -1599,21 +1606,22 @@ var afterquery = (function() {
   }
 
 
-  function maybeSet(dict, key, value) {
+Afterquery.prototype.maybeSet = function(dict, key, value) {
     if (!(key in dict)) {
       dict[key] = value;
     }
-  }
+  };
 
 
-  function addTransforms(queue, args) {
+Afterquery.prototype.addTransforms = function(queue, args) {
+    var that = this;
     var trace = args.get('trace');
     var argi;
 
     // helper function for synchronous transformations (ie. ones that return
     // the output grid rather than calling a callback)
     var transform = function(f, arg) {
-      enqueue(queue, args.all[argi][0] + '=' + args.all[argi][1],
+      that.enqueue(queue, args.all[argi][0] + '=' + args.all[argi][1],
               function(ingrid, done) {
         var outgrid = f(ingrid, arg);
         done(outgrid);
@@ -1623,41 +1631,41 @@ var afterquery = (function() {
     for (var argi in args.all) {
       var argkey = args.all[argi][0], argval = args.all[argi][1];
       if (argkey == 'group') {
-        transform(doGroupBy, argval);
+        transform(function(g,a){return that.doGroupBy(g,a);}, argval);
       } else if (argkey == 'treegroup') {
-        transform(doTreeGroupBy, argval);
+        transform(function(g,a){return that.doTreeGroupBy(g,a);}, argval);
       } else if (argkey == 'finishtree') {
-        transform(doFinishTree, argval);
+        transform(function(g,a){return that.doFinishTree(g,a);}, argval);
       } else if (argkey == 'inverttree') {
-        transform(doInvertTree, argval);
+        transform(function(g,a){return that.doInvertTree(g,a);}, argval);
       } else if (argkey == 'cracktree') {
-        transform(doCrackTree, argval);
+        transform(function(g,a){return that.doCrackTree(g,a);}, argval);
       } else if (argkey == 'pivot') {
-        transform(doPivotBy, argval);
+        transform(function(g,a){return that.doPivotBy(g,a);}, argval);
       } else if (argkey == 'filter') {
-        transform(doFilterBy, argval);
+        transform(function(g,a){return that.doFilterBy(g,a);}, argval);
       } else if (argkey == 'q') {
-        transform(doQueryBy, argval);
+        transform(function(g,a){return that.doQueryBy(g,a);}, argval);
       } else if (argkey == 'limit') {
-        transform(doLimit, argval);
+        transform(function(g,a){return that.doLimit(g,a);}, argval);
       } else if (argkey == 'delta') {
-        transform(doDeltaBy, argval);
+        transform(function(g,a){return that.doDeltaBy(g,a);}, argval);
       } else if (argkey == 'unselect') {
-        transform(doUnselectBy, argval);
+        transform(function(g,a){return that.doUnselectBy(g,a);}, argval);
       } else if (argkey == 'order') {
-        transform(doOrderBy, argval);
+        transform(function(g,a){return that.doOrderBy(g,a);}, argval);
       } else if (argkey == 'extract_regexp') {
-        transform(doExtractRegexp, argval);
+        transform(function(g,a){return that.doExtractRegexp(g,a);}, argval);
       } else if (argkey == 'quantize') {
-        transform(doQuantize, argval);
+        transform(function(g,a){return that.doQuantize(g,a);}, argval);
       } else if (argkey == 'yspread') {
-        transform(doYSpread, argval);
+        transform(function(g,a){return that.doYSpread(g,a);}, argval);
       }
     }
-  }
+  };
 
 
-  function dyIndexFromX(dychart, x) {
+Afterquery.prototype.dyIndexFromX = function(dychart, x) {
     // TODO(apenwarr): consider a binary search
     for (var i = dychart.numRows() - 1; i >= 0; i--) {
       if (dychart.getValue(i, 0) <= x) {
@@ -1665,10 +1673,11 @@ var afterquery = (function() {
       }
     }
     return i;
-  }
+  };
 
 
-  function createTracesChart(grid, el, colsPerChart) {
+Afterquery.prototype.createTracesChart = function(grid, el, colsPerChart) {
+    var that = this;
     var charts = [];
     var xlines = [];
 
@@ -1757,7 +1766,7 @@ var afterquery = (function() {
           if (inHighlighter) return;
           inHighlighter = true;
           for (var charti = 0; charti < charts.length; charti++) {
-            var otheridx = dyIndexFromX(charts[charti], data[idx][0]);
+            var otheridx = that.dyIndexFromX(charts[charti], data[idx][0]);
             charts[charti].setSelection(otheridx);
           }
           inHighlighter = false;
@@ -1777,10 +1786,11 @@ var afterquery = (function() {
     }
 
     return { draw: function(table, options) { } };
-  }
+  };
 
 
-  function addRenderers(queue, args) {
+Afterquery.prototype.addRenderers = function(queue, args) {
+    var that = this;
     var trace = args.get('trace');
     var chartops = args.get('chart');
     var t, datatable, resizeTimer;
@@ -1794,22 +1804,22 @@ var afterquery = (function() {
     };
     var el = document.getElementById('vizchart');
 
-    enqueue(queue, 'gentable', function(grid, done) {
+    this.enqueue(queue, 'gentable', function(grid, done) {
       if (chartops) {
         var chartbits = chartops.split(',');
         var charttype = chartbits.shift();
         for (var charti in chartbits) {
-          var kv = trySplitOne(chartbits[charti], '=');
+          var kv = that.trySplitOne(chartbits[charti], '=');
           options[kv[0]] = kv[1];
         }
         if (charttype == 'stacked' || charttype == 'stackedarea') {
           // Some charts react badly to missing values, so fill them in.
-          grid = fillNullsWithZero(grid);
+          grid = that.fillNullsWithZero(grid);
         }
-        grid = limitDecimalPrecision(grid);
+        grid = that.limitDecimalPrecision(grid);
 
         // Scan and add all args not for afterquery to GViz options.
-        scanGVizChartOptions(args, options);
+        that.scanGVizChartOptions(args, options);
 
         if (charttype == 'stackedarea' || charttype == 'stacked') {
           t = new google.visualization.AreaChart(el);
@@ -1841,12 +1851,12 @@ var afterquery = (function() {
           t = new google.visualization.PieChart(el);
         } else if (charttype == 'tree') {
           if (grid.headers[0] == '_tree') {
-            grid = finishTree(grid, ['_tree']);
-            grid = crackTree(grid, '_tree');
+            grid = that.finishTree(grid, ['_tree']);
+            grid = that.crackTree(grid, '_tree');
           }
-          maybeSet(options, 'maxDepth', 3);
-          maybeSet(options, 'maxPostDepth', 1);
-          maybeSet(options, 'showScale', 1);
+          that.maybeSet(options, 'maxDepth', 3);
+          that.maybeSet(options, 'maxPostDepth', 1);
+          that.maybeSet(options, 'showScale', 1);
           t = new google.visualization.TreeMap(el);
         } else if (charttype == 'candle' || charttype == 'candlestick') {
           t = new google.visualization.CandlestickChart(el);
@@ -1854,12 +1864,12 @@ var afterquery = (function() {
           t = new google.visualization.AnnotatedTimeLine(el);
         } else if (charttype == 'dygraph' || charttype == 'dygraph+errors') {
           t = new Dygraph.GVizChart(el);
-          maybeSet(options, 'showRoller', true);
+          that.maybeSet(options, 'showRoller', true);
           if (charttype == 'dygraph+errors') {
             options.errorBars = true;
           }
         } else if (charttype == 'traces' || charttype == 'traces+minmax') {
-          t = createTracesChart(grid, el,
+          t = that.createTracesChart(grid, el,
                                 charttype == 'traces+minmax' ? 3 : 1);
         } else if (charttype == 'heatgrid') {
           t = new HeatGrid(el);
@@ -1879,7 +1889,7 @@ var afterquery = (function() {
           charttype == 'traces+minmax') {
         datatable = grid;
       } else {
-        datatable = dataToGvizTable(grid, gridoptions);
+        datatable = that.dataToGvizTable(grid, gridoptions);
 
         var dateformat = new google.visualization.DateFormat({
           pattern: 'yyyy-MM-dd'
@@ -1888,9 +1898,9 @@ var afterquery = (function() {
           pattern: 'yyyy-MM-dd HH:mm:ss'
         });
         for (var coli = 0; coli < grid.types.length; coli++) {
-          if (grid.types[coli] === T_DATE) {
+          if (grid.types[coli] === that.T_DATE) {
             dateformat.format(datatable, coli);
-          } else if (grid.types[coli] === T_DATETIME) {
+          } else if (grid.types[coli] === that.T_DATETIME) {
             datetimeformat.format(datatable, coli);
           }
         }
@@ -1898,7 +1908,7 @@ var afterquery = (function() {
       done(grid);
     });
 
-    enqueue(queue, chartops ? 'chart=' + chartops : 'view',
+    this.enqueue(queue, chartops ? 'chart=' + chartops : 'view',
             function(grid, done) {
       if (grid.data.length) {
         var doRender = function() {
@@ -1918,9 +1928,9 @@ var afterquery = (function() {
       }
       done(grid);
     });
-  }
+  };
 
-  function scanGVizChartOptions(args, options) {
+Afterquery.prototype.scanGVizChartOptions = function(args, options) {
     // Parse args to be sent to GViz.
     var allArgs = args['all'];
     for (var i in allArgs) {
@@ -1942,26 +1952,27 @@ var afterquery = (function() {
         continue;
       }
       // Add params for GViz API into options object.
-      addGVizChartOption(options, key, allArgs[i][1]);
+      this.addGVizChartOption(options, key, allArgs[i][1]);
     }
     console.debug('Options sent to GViz');
     console.debug(options);
-  }
+  };
 
-  function addGVizChartOption(options, key, value) {
+Afterquery.prototype.addGVizChartOption = function(options, key, value) {
     if (key.indexOf('.') > -1) {
       var subObjects = key.split('.');
       if (!options[subObjects[0]]) {
         options[subObjects[0]] = {};
       }
-      addGVizChartOption(options[subObjects[0]],
+      this.addGVizChartOption(options[subObjects[0]],
         key.substring(key.indexOf('.') + 1), value);
     } else {
       options[key] = value;
     }
-  }
+  };
 
-  function finishQueue(queue, args, done) {
+Afterquery.prototype.finishQueue = function(queue, args, done) {
+    var that = this;
     var trace = args.get('trace');
     if (trace) {
       var prevdata;
@@ -1976,7 +1987,7 @@ var afterquery = (function() {
         var viewel = $('#step' + stepi + ' .grid');
         if (prevdata != grid.data) {
           var t = new google.visualization.Table(viewel[0]);
-          var datatable = dataToGvizTable({
+          var datatable = this.dataToGvizTable({
             headers: grid.headers,
             data: grid.data.slice(0, 1000),
             types: grid.types
@@ -1990,78 +2001,77 @@ var afterquery = (function() {
           $('.vizstep').show();
         }
       };
-      runqueue(queue, null, done, showstatus, wrap, after_each);
+      this.runqueue(queue, null, done, this.showstatus, function(f){return that.wrap(f);}, after_each);
     } else {
-      runqueue(queue, null, done, showstatus, wrap);
+      this.runqueue(queue, null, done, this.showstatus, function(f){return that.wrap(f);});
     }
-  }
+  };
 
 
-  function gotError(url, jqxhr, status) {
-    showstatus('');
+Afterquery.prototype.gotError = function(url, jqxhr, status) {
+    this.showstatus('');
     $('#vizraw').html('<a href="' + encodeURI(url) + '">' +
                       encodeURI(url) +
                       '</a>');
     throw new Error('error getting url "' + url + '": ' +
                     status + ': ' +
                     'visit the data page and ensure it\'s valid jsonp.');
-  }
+  };
 
 
-  function argsToArray(args) {
+Afterquery.prototype.argsToArray = function(args) {
     // call Array's slice() function on an 'arguments' structure, which is
     // like an array but missing functions like slice().  The result is a
     // real Array object, which is more useful.
     return [].slice.apply(args);
-  }
+  };
 
 
-  function wrap(func) {
+Afterquery.prototype.wrap = function(func) {
     // pre_args is the arguments as passed at wrap() time
-    var pre_args = argsToArray(arguments).slice(1);
+    var that = this;
+    var pre_args = this.argsToArray(arguments).slice(1);
     var f = function() {
       try {
         // post_args is the arguments as passed when calling f()
-        var post_args = argsToArray(arguments);
+        var post_args = that.argsToArray(arguments);
         return func.apply(null, pre_args.concat(post_args));
       } catch (e) {
         $('#vizchart').hide();
         $('#vizstatus').css('position', 'relative');
         $('.vizstep').show();
-        err(e);
-        err("<p><a href='/help'>here's the documentation</a>");
+        that.err(e);
+        that.err("<p><a href='/help'>here's the documentation</a>");
         throw e;
       }
     };
     return f;
-  }
+  };
 
 
-  var URL_RE = RegExp('^((\\w+:)?(//[^/]*)?)');
-
-
-  function urlMinusPath(url) {
+Afterquery.prototype.urlMinusPath = function(url) {
+    var URL_RE = RegExp('^((\\w+:)?(//[^/]*)?)');
     var g = URL_RE.exec(url);
     if (g && g[1]) {
       return g[1];
     } else {
       return url;
     }
-  }
+  };
 
 
-  function checkUrlSafety(url) {
+Afterquery.prototype.checkUrlSafety = function(url) {
     if (/[<>"''"]/.exec(url)) {
       throw new Error('unsafe url detected. encoded=' + encodedURI(url));
     }
-  }
+  };
 
 
-  function extendDataUrl(url) {
+Afterquery.prototype.extendDataUrl = function(url) {
     // some services expect callback=, some expect jsonp=, so supply both
     var plus = 'callback=jsonp&jsonp=jsonp';
-    var hostpart = urlMinusPath(url);
-    var auth = localStorage[['auth', hostpart]];
+    var hostpart = this.urlMinusPath(url);
+    var auth = 0;//localStorage[['auth', hostpart]];
     if (auth) {
       plus += '&auth=' + encodeURIComponent(auth);
     }
@@ -2071,10 +2081,10 @@ var afterquery = (function() {
     } else {
       return url + '?' + plus;
     }
-  }
+  };
 
 
-  function extractJsonFromJsonp(text, success_func) {
+Afterquery.prototype.extractJsonFromJsonp = function(text, success_func) {
     var data = text.trim();
     var start = data.indexOf('jsonp(');
     if (start >= 0) {
@@ -2082,22 +2092,24 @@ var afterquery = (function() {
     }
     data = JSON.parse(data);
     success_func(data);
-  }
+  };
 
 
-  function getUrlData_xhr(url, success_func, error_func) {
+Afterquery.prototype.getUrlData_xhr = function(url, success_func, error_func) {
+    var that = this;
     jQuery.support.cors = true;
     jQuery.ajax(url, {
       headers: { 'X-DataSource-Auth': 'a' },
       xhrFields: { withCredentials: true },
       dataType: 'text',
-      success: function(text) { extractJsonFromJsonp(text, success_func); },
+      success: function(text) { that.extractJsonFromJsonp(text, success_func); },
       error: error_func
     });
-  }
+  };
 
 
-  function getUrlData_jsonp(url, success_func, error_func) {
+Afterquery.prototype.getUrlData_jsonp = function(url, success_func, error_func) {
+    var that = this;
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
 
@@ -2114,7 +2126,7 @@ var afterquery = (function() {
 
       // a callback the jsonp can execute if oauth2 authentication is needed
       iframe.contentWindow.tryOAuth2 = function(oauth2_url) {
-        var hostpart = urlMinusPath(oauth2_url);
+        var hostpart = that.urlMinusPath(oauth2_url);
         var oauth_appends = {
           'https://accounts.google.com':
               'client_id=41470923181.apps.googleusercontent.com'
@@ -2138,7 +2150,7 @@ var afterquery = (function() {
             want_url = oauth2_url + '?' + plus;
           }
           console.debug('oauth2 redirect:', want_url);
-          checkUrlSafety(want_url);
+          that.checkUrlSafety(want_url);
           document.write('Click here to ' +
                          '<a target="_top" ' +
                          '  href="' + want_url +
@@ -2165,15 +2177,15 @@ var afterquery = (function() {
       };
 
       iframe.contentWindow.onerror = function(message, xurl, lineno) {
-        err(message + ' url=' + xurl + ' line=' + lineno);
+        that.err(message + ' url=' + xurl + ' line=' + lineno);
       };
 
       iframe.contentWindow.onpostscript = function() {
         if (successfunc_called) {
           console.debug('json load was successful.');
         } else {
-          err('Error loading data; check javascript console for details.');
-          err('<a href="' + encodeURI(url) + '">' + encodeURI(url) + '</a>');
+          that.err('Error loading data; check javascript console for details.');
+          that.err('<a href="' + encodeURI(url) + '">' + encodeURI(url) + '</a>');
         }
       };
 
@@ -2199,101 +2211,74 @@ var afterquery = (function() {
       iframe.contentDocument.body.appendChild(postscript);
     };
     document.body.appendChild(iframe);
-  }
+  };
 
 
-  function getUrlData(url, success_func, error_func) {
+Afterquery.prototype.getUrlData = function(url, success_func, error_func) {
     console.debug('fetching data url:', url);
     var onError = function(xhr, msg) {
       console.debug('xhr returned error:', msg);
       console.debug('(trying jsonp instead)');
-      getUrlData_jsonp(url, success_func, error_func);
+      this.getUrlData_jsonp(url, success_func, error_func);
     };
-    getUrlData_xhr(url, success_func, onError);
-  }
+    this.getUrlData_xhr(url, success_func, onError);
+  };
 
 
-  function addUrlGetters(queue, args, startdata) {
+Afterquery.prototype.addUrlGetters = function(queue, args, startdata) {
+    var that = this;
     if (!startdata) {
       var url = args.get('url');
       console.debug('original data url:', url);
       if (!url) throw new Error('Missing url= in query parameter');
       if (url.indexOf('//') == 0) url = window.location.protocol + url;
-      url = extendDataUrl(url);
-      showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
+      url = this.extendDataUrl(url);
+      this.showstatus('Loading <a href="' + encodeURI(url) + '">data</a>...');
 
-      enqueue(queue, 'get data', function(_, done) {
-        getUrlData(url, wrap(done), wrap(gotError, url));
+      this.enqueue(queue, 'get data', function(_, done) {
+        that.getUrlData(url, that.wrap(done), that.wrap(function(u,j,d){that.gotError(u,j,s);}, url));
       });
     } else {
-      enqueue(queue, 'init data', function(_, done) {
+      this.enqueue(queue, 'init data', function(_, done) {
         done(startdata);
       });
     }
 
-    enqueue(queue, 'parse', function(rawdata, done) {
+    this.enqueue(queue, 'parse', function(rawdata, done) {
       console.debug('rawdata:', rawdata);
-      var outgrid = gridFromData(rawdata);
+      var outgrid = that.gridFromData(rawdata);
       console.debug('grid:', outgrid);
       done(outgrid);
     });
-  }
+  };
 
 
-  function exec(query, startdata, done) {
-    var args = parseArgs(query);
+Afterquery.prototype.exec = function(query, startdata, done) {
+    var args = this.parseArgs(query);
     var queue = [];
-    addUrlGetters(queue, args, startdata);
-    addTransforms(queue, args);
-    runqueue(queue, startdata, done);
-  }
+    this.addUrlGetters(queue, args, startdata);
+    this.addTransforms(queue, args);
+    this.runqueue(queue, startdata, done);
+  };
 
 
-  function render(query, startdata, done) {
-    var args = parseArgs(query);
+Afterquery.prototype.render = function(query, startdata, done) {
+    var args = this.parseArgs(query);
     var editlink = args.get('editlink');
     if (editlink == 0) {
       $('#editmenu').hide();
     }
 
     var queue = [];
-    addUrlGetters(queue, args, startdata);
-    addTransforms(queue, args);
-    addRenderers(queue, args);
-    finishQueue(queue, args, done);
-  }
-
-
-  return {
-    internal: {
-      trySplitOne: trySplitOne,
-      dataToGvizTable: dataToGvizTable,
-      guessTypes: guessTypes,
-      myParseDate: myParseDate,
-      groupBy: groupBy,
-      pivotBy: pivotBy,
-      stringifiedCols: stringifiedCols,
-      filterBy: filterBy,
-      queryBy: queryBy,
-      deltaBy: deltaBy,
-      unselectBy: unselectBy,
-      orderBy: orderBy,
-      extractRegexp: extractRegexp,
-      fillNullsWithZero: fillNullsWithZero,
-      urlMinusPath: urlMinusPath,
-      checkUrlSafety: checkUrlSafety,
-      argsToArray: argsToArray,
-      enqueue: enqueue,
-      runqueue: runqueue,
-      gridFromData: gridFromData
-    },
-    T_NUM: T_NUM,
-    T_DATE: T_DATE,
-    T_DATETIME: T_DATETIME,
-    T_BOOL: T_BOOL,
-    T_STRING: T_STRING,
-    parseArgs: parseArgs,
-    exec: exec,
-    render: wrap(render)
+    this.addUrlGetters(queue, args, startdata);
+    this.addTransforms(queue, args);
+    this.addRenderers(queue, args);
+    this.finishQueue(queue, args, done);
   };
-})();
+
+
+var afterquery = {};
+afterquery.render = function(query, startdata, done) {
+  var aq = new Afterquery();
+  aq.render(query, startdata, done);
+}
