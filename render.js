@@ -43,27 +43,41 @@
   }
   */
 
-function Afterquery() {
+function Afterquery(options) {
+  if(options === null || options === undefined) {
+    options = {};
+  }
+
+  this.root_id = options.root_id;
 
   this.colormap = {};
   this.next_color = 0;
 };
 
 
+Afterquery.prototype.elid = function(id) {
+    if(this.root_id) {
+
+      console.log("#"+this.root_id+" ."+id);
+      return "#"+this.root_id+" ."+id;
+    }
+	console.log("#"+id);
+    return "#"+id;
+}
 
 Afterquery.prototype.err = function(s) {
-    $('#vizlog').append('\n' + s);
+    $(this.elid("vizlog")).append('\n' + s);
   };
 
 
 Afterquery.prototype.showstatus = function(s, s2) {
-    $('#statustext').html(s);
-    $('#statussub').text(s2 || '');
+    $(this.elid('statustext')).html(s);
+    $(this.elid('statussub')).text(s2 || '');
     if (s || s2) {
       console.debug('status message:', s, s2);
-      $('#vizstatus').show();
+      $(this.elid('vizstatus')).show();
     } else {
-      $('#vizstatus').hide();
+      $(this.elid('vizstatus')).hide();
     }
   };
 
@@ -1802,7 +1816,7 @@ Afterquery.prototype.addRenderers = function(queue, args) {
     var gridoptions = {
       intensify: intensify
     };
-    var el = document.getElementById('vizchart');
+	var el = $(this.elid("vizchart"))[0];
 
     this.enqueue(queue, 'gentable', function(grid, done) {
       if (chartops) {
@@ -1977,7 +1991,7 @@ Afterquery.prototype.finishQueue = function(queue, args, done) {
     if (trace) {
       var prevdata;
       var after_each = function(grid, stepi, nsteps, text, msec_time) {
-        $('#vizlog').append('<div class="vizstep" id="step' + stepi + '">' +
+        $(this.elid('vizlog')).append('<div class="vizstep" id="step' + stepi + '">' +
                             '  <div class="text"></div>' +
                             '  <div class="grid"></div>' +
                             '</div>');
@@ -2001,16 +2015,16 @@ Afterquery.prototype.finishQueue = function(queue, args, done) {
           $('.vizstep').show();
         }
       };
-      this.runqueue(queue, null, done, this.showstatus, function(f){return that.wrap(f);}, after_each);
+      this.runqueue(queue, null, done, function(s,s2){that.showstatus(s,s2);}, function(f){return that.wrap(f);}, after_each);
     } else {
-      this.runqueue(queue, null, done, this.showstatus, function(f){return that.wrap(f);});
+      this.runqueue(queue, null, done, function(s,s2){that.showstatus(s,s2);}, function(f){return that.wrap(f);});
     }
   };
 
 
 Afterquery.prototype.gotError = function(url, jqxhr, status) {
     this.showstatus('');
-    $('#vizraw').html('<a href="' + encodeURI(url) + '">' +
+    $(this.elid('vizraw')).html('<a href="' + encodeURI(url) + '">' +
                       encodeURI(url) +
                       '</a>');
     throw new Error('error getting url "' + url + '": ' +
@@ -2037,9 +2051,13 @@ Afterquery.prototype.wrap = function(func) {
         var post_args = that.argsToArray(arguments);
         return func.apply(null, pre_args.concat(post_args));
       } catch (e) {
-        $('#vizchart').hide();
-        $('#vizstatus').css('position', 'relative');
-        $('.vizstep').show();
+        $(that.elid('vizchart')).hide();
+        $(that.elid('vizstatus')).css('position', 'relative');
+        if(that.rootid) {
+          $("#" + that.rootid + ' .vizstep').show();
+        } else {
+          $('.vizstep').show();
+        }
         that.err(e);
         that.err("<p><a href='/help'>here's the documentation</a>");
         throw e;
@@ -2266,7 +2284,7 @@ Afterquery.prototype.render = function(query, startdata, done) {
     var args = Afterquery.parseArgs(query);
     var editlink = args.get('editlink');
     if (editlink == 0) {
-      $('#editmenu').hide();
+      $(thid.elid('editmenu')).hide();
     }
 
     var queue = [];
