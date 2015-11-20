@@ -13,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * Additional modifications, copyright 2015 Alan De Smet, also licensed under
+ * the Apache License, Version 2.0
+ */
+
 'use strict';
 
 /*
