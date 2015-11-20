@@ -43,7 +43,7 @@
   }
   */
 
-function Afterquery(options) {
+function AfterqueryObj(options) {
   if(options === null || options === undefined) {
     options = {};
   }
@@ -55,7 +55,7 @@ function Afterquery(options) {
 };
 
 
-Afterquery.prototype.elid = function(id) {
+AfterqueryObj.prototype.elid = function(id) {
     if(this.root_id) {
 
       console.log("#"+this.root_id+" ."+id);
@@ -65,12 +65,12 @@ Afterquery.prototype.elid = function(id) {
     return "#"+id;
 }
 
-Afterquery.prototype.err = function(s) {
+AfterqueryObj.prototype.err = function(s) {
     $(this.elid("vizlog")).append('\n' + s);
   };
 
 
-Afterquery.prototype.showstatus = function(s, s2) {
+AfterqueryObj.prototype.showstatus = function(s, s2) {
     $(this.elid('statustext')).html(s);
     $(this.elid('statussub')).text(s2 || '');
     if (s || s2) {
@@ -82,7 +82,7 @@ Afterquery.prototype.showstatus = function(s, s2) {
   };
 
 
-Afterquery.parseArgs = function(query) {
+AfterqueryObj.parseArgs = function(query) {
     var kvlist;
     if (query.join) {
       // user provided an array of 'key=value' strings
@@ -113,7 +113,7 @@ Afterquery.parseArgs = function(query) {
 
 
 
-Afterquery.looksLikeUrl = function(s) {
+AfterqueryObj.looksLikeUrl = function(s) {
     var IS_URL_RE = RegExp('^(http|https)://');
     var url, label;
     var pos = (s || '').lastIndexOf('|');
@@ -132,7 +132,7 @@ Afterquery.looksLikeUrl = function(s) {
   };
 
 
-Afterquery.htmlEscape = function(s) {
+AfterqueryObj.htmlEscape = function(s) {
     if (s == undefined) {
       return s;
     }
@@ -143,7 +143,7 @@ Afterquery.htmlEscape = function(s) {
   };
 
 
-Afterquery.dataToGvizTable = function(grid, options) {
+AfterqueryObj.dataToGvizTable = function(grid, options) {
     if (!options) options = {};
     var is_html = options.allowHtml;
     var headers = grid.headers, data = grid.data, types = grid.types;
@@ -152,7 +152,7 @@ Afterquery.dataToGvizTable = function(grid, options) {
       dheaders.push({
         id: headers[i],
         label: headers[i],
-        type: (types[i] != Afterquery.T_BOOL || !options.bool_to_num) ? types[i] : Afterquery.T_NUM
+        type: (types[i] != AfterqueryObj.T_BOOL || !options.bool_to_num) ? types[i] : AfterqueryObj.T_NUM
       });
     }
     var ddata = [];
@@ -160,14 +160,14 @@ Afterquery.dataToGvizTable = function(grid, options) {
       var row = [];
       for (var coli in data[rowi]) {
         var cell = data[rowi][coli];
-        if (is_html && types[coli] === Afterquery.T_STRING) {
+        if (is_html && types[coli] === AfterqueryObj.T_STRING) {
           cell = cell.toString();
-          var urlresult = Afterquery.looksLikeUrl(cell);
+          var urlresult = AfterqueryObj.looksLikeUrl(cell);
           if (urlresult) {
             cell = '<a href="' + encodeURI(urlresult[0]) + '">' +
-                Afterquery.htmlEscape(urlresult[1]) + '</a>';
+                AfterqueryObj.htmlEscape(urlresult[1]) + '</a>';
           } else {
-            cell = Afterquery.htmlEscape(cell);
+            cell = AfterqueryObj.htmlEscape(cell);
           }
         }
         var col = { v: cell };
@@ -190,7 +190,7 @@ Afterquery.dataToGvizTable = function(grid, options) {
       var rowmin = [], rowmax = [];
       var colmin = [], colmax = [];
       for (var coli in grid.types) {
-        if (grid.types[coli] !== Afterquery.T_NUM) continue;
+        if (grid.types[coli] !== AfterqueryObj.T_NUM) continue;
         for (var rowi in grid.data) {
           var cell = grid.data[rowi][coli];
           if (cell < (minval || 0)) minval = cell;
@@ -203,7 +203,7 @@ Afterquery.dataToGvizTable = function(grid, options) {
       }
 
       for (var coli in grid.types) {
-        if (grid.types[coli] == Afterquery.T_NUM) {
+        if (grid.types[coli] == AfterqueryObj.T_NUM) {
           var formatter = new google.visualization.ColorFormat();
           var mn, mx;
           if (options.intensify == 'xy') {
@@ -231,14 +231,14 @@ Afterquery.dataToGvizTable = function(grid, options) {
 
 
 
-Afterquery.T_NUM = 'number';
-Afterquery.T_DATE = 'date';
-Afterquery.T_DATETIME = 'datetime';
-Afterquery.T_BOOL = 'boolean';
-Afterquery.T_STRING = 'string';
+AfterqueryObj.T_NUM = 'number';
+AfterqueryObj.T_DATE = 'date';
+AfterqueryObj.T_DATETIME = 'datetime';
+AfterqueryObj.T_BOOL = 'boolean';
+AfterqueryObj.T_STRING = 'string';
 
 
-Afterquery.guessTypes = function(data) {
+AfterqueryObj.guessTypes = function(data) {
     var CANT_NUM = 1;
     var CANT_BOOL = 2;
     var CANT_DATE = 4;
@@ -250,7 +250,7 @@ Afterquery.guessTypes = function(data) {
         impossible[coli] |= 0;
         var cell = row[coli];
         if (cell == '' || cell == null) continue;
-        var d = Afterquery.myParseDate(cell);
+        var d = AfterqueryObj.myParseDate(cell);
         if (isNaN(d)) {
           impossible[coli] |= CANT_DATE | CANT_DATETIME;
         } else if (d.getHours() || d.getMinutes() || d.getSeconds()) {
@@ -269,22 +269,22 @@ Afterquery.guessTypes = function(data) {
     for (var coli in impossible) {
       var imp = impossible[coli];
       if (!(imp & CANT_BOOL)) {
-        types[coli] = Afterquery.T_BOOL;
+        types[coli] = AfterqueryObj.T_BOOL;
       } else if (!(imp & CANT_DATE)) {
-        types[coli] = Afterquery.T_DATE;
+        types[coli] = AfterqueryObj.T_DATE;
       } else if (!(imp & CANT_DATETIME)) {
-        types[coli] = Afterquery.T_DATETIME;
+        types[coli] = AfterqueryObj.T_DATETIME;
       } else if (!(imp & CANT_NUM)) {
-        types[coli] = Afterquery.T_NUM;
+        types[coli] = AfterqueryObj.T_NUM;
       } else {
-        types[coli] = Afterquery.T_STRING;
+        types[coli] = AfterqueryObj.T_STRING;
       }
     }
     return types;
   };
 
 
-Afterquery.myParseDate = function(s) {
+AfterqueryObj.myParseDate = function(s) {
     // We want to support various different date formats that people
     // tend to use as strings, with and without time of day,
     // including yyyy-mm-dd hh:mm:ss.mmm, yyyy/mm/dd, mm/dd/yyyy hh:mm PST, etc.
@@ -335,40 +335,40 @@ Afterquery.myParseDate = function(s) {
   };
 
 
-Afterquery.zpad = function(n, width) {
+AfterqueryObj.zpad = function(n, width) {
     var s = '' + n;
     while (s.length < width) s = '0' + s;
     return s;
   };
 
 
-Afterquery.dateToStr = function(d) {
+AfterqueryObj.dateToStr = function(d) {
     if (!d) return '';
     return (d.getFullYear() + '-' +
-            Afterquery.zpad(d.getMonth() + 1, 2) + '-' +
-            Afterquery.zpad(d.getDate(), 2));
+            AfterqueryObj.zpad(d.getMonth() + 1, 2) + '-' +
+            AfterqueryObj.zpad(d.getDate(), 2));
   };
 
 
-Afterquery.dateTimeToStr = function(d) {
+AfterqueryObj.dateTimeToStr = function(d) {
     if (!d) return '';
     var msec = d.getMilliseconds();
-    return (Afterquery.dateToStr(d) + ' ' +
-            Afterquery.zpad(d.getHours(), 2) + ':' +
-            Afterquery.zpad(d.getMinutes(), 2) + ':' +
-            Afterquery.zpad(d.getSeconds(), 2) +
-            (msec ? ('.' + Afterquery.zpad(msec, 3)) : ''));
+    return (AfterqueryObj.dateToStr(d) + ' ' +
+            AfterqueryObj.zpad(d.getHours(), 2) + ':' +
+            AfterqueryObj.zpad(d.getMinutes(), 2) + ':' +
+            AfterqueryObj.zpad(d.getSeconds(), 2) +
+            (msec ? ('.' + AfterqueryObj.zpad(msec, 3)) : ''));
   };
 
 
-Afterquery.prototype.convertTypes = function(data, types) {
+AfterqueryObj.prototype.convertTypes = function(data, types) {
     for (var coli in types) {
       var type = types[coli];
-      if (type === Afterquery.T_DATE || type === Afterquery.T_DATETIME) {
+      if (type === AfterqueryObj.T_DATE || type === AfterqueryObj.T_DATETIME) {
         for (var rowi in data) {
-          data[rowi][coli] = Afterquery.myParseDate(data[rowi][coli]);
+          data[rowi][coli] = AfterqueryObj.myParseDate(data[rowi][coli]);
         }
-      } else if (type === Afterquery.T_NUM || type === Afterquery.T_BOOL) {
+      } else if (type === AfterqueryObj.T_NUM || type === AfterqueryObj.T_BOOL) {
         for (var rowi in data) {
           var v = data[rowi][coli];
           if (v != null && v != '') {
@@ -380,7 +380,7 @@ Afterquery.prototype.convertTypes = function(data, types) {
   };
 
 
-Afterquery.prototype.colNameToColNum = function(grid, colname) {
+AfterqueryObj.prototype.colNameToColNum = function(grid, colname) {
     var keycol = (colname == '*') ? 0 : grid.headers.indexOf(colname);
     if (keycol < 0) {
       throw new Error('unknown column name "' + colname + '"');
@@ -389,9 +389,9 @@ Afterquery.prototype.colNameToColNum = function(grid, colname) {
   };
 
 
-Afterquery.prototype.FUNC_RE = /^(\w+)\((.*)\)$/;
+AfterqueryObj.prototype.FUNC_RE = /^(\w+)\((.*)\)$/;
 
-Afterquery.prototype.keyToColNum = function(grid, key) {
+AfterqueryObj.prototype.keyToColNum = function(grid, key) {
     var g = this.FUNC_RE.exec(key);
     if (g) {
       return this.colNameToColNum(grid, g[2]);
@@ -401,7 +401,7 @@ Afterquery.prototype.keyToColNum = function(grid, key) {
   };
 
 
-Afterquery.prototype._groupByLoop = function(ingrid, keys, initval, addcols_func, putvalues_func) {
+AfterqueryObj.prototype._groupByLoop = function(ingrid, keys, initval, addcols_func, putvalues_func) {
     var outgrid = {headers: [], data: [], types: []};
     var keycols = [];
     for (var keyi in keys) {
@@ -439,7 +439,7 @@ Afterquery.prototype._groupByLoop = function(ingrid, keys, initval, addcols_func
     return outgrid;
   };
 
-Afterquery.prototype.agg_funcs = {
+AfterqueryObj.prototype.agg_funcs = {
     first: function(l) {
       return l[0];
     },
@@ -518,7 +518,7 @@ Afterquery.prototype.agg_funcs = {
     },
 
     avg: function(l) {
-      return Afterquery.prototype.agg_funcs.sum(l) / Afterquery.prototype.agg_funcs.count_nz(l);
+      return AfterqueryObj.prototype.agg_funcs.sum(l) / AfterqueryObj.prototype.agg_funcs.count_nz(l);
     },
 
     // also works for non-numeric values, as long as they're sortable
@@ -543,7 +543,7 @@ Afterquery.prototype.agg_funcs = {
     },
 
     stddev: function(l) {
-      var avg = Afterquery.prototype.agg_funcs.avg(l);
+      var avg = AfterqueryObj.prototype.agg_funcs.avg(l);
       var sumsq = 0.0;
       for (var i in l) {
         var d = parseFloat(l[i]) - avg;
@@ -562,17 +562,17 @@ Afterquery.prototype.agg_funcs = {
       }
     }
   };
-Afterquery.prototype.agg_funcs.count.return_type = Afterquery.T_NUM;
-Afterquery.prototype.agg_funcs.count_nz.return_type = Afterquery.T_NUM;
-Afterquery.prototype.agg_funcs.count_distinct.return_type = Afterquery.T_NUM;
-Afterquery.prototype.agg_funcs.sum.return_type = Afterquery.T_NUM;
-Afterquery.prototype.agg_funcs.avg.return_type = Afterquery.T_NUM;
-Afterquery.prototype.agg_funcs.stddev.return_type = Afterquery.T_NUM;
-Afterquery.prototype.agg_funcs.cat.return_type = Afterquery.T_STRING;
-Afterquery.prototype.agg_funcs.color.return_type = Afterquery.T_NUM;
+AfterqueryObj.prototype.agg_funcs.count.return_type = AfterqueryObj.T_NUM;
+AfterqueryObj.prototype.agg_funcs.count_nz.return_type = AfterqueryObj.T_NUM;
+AfterqueryObj.prototype.agg_funcs.count_distinct.return_type = AfterqueryObj.T_NUM;
+AfterqueryObj.prototype.agg_funcs.sum.return_type = AfterqueryObj.T_NUM;
+AfterqueryObj.prototype.agg_funcs.avg.return_type = AfterqueryObj.T_NUM;
+AfterqueryObj.prototype.agg_funcs.stddev.return_type = AfterqueryObj.T_NUM;
+AfterqueryObj.prototype.agg_funcs.cat.return_type = AfterqueryObj.T_STRING;
+AfterqueryObj.prototype.agg_funcs.color.return_type = AfterqueryObj.T_NUM;
 
 
-Afterquery.prototype.groupBy = function(ingrid, keys, values) {
+AfterqueryObj.prototype.groupBy = function(ingrid, keys, values) {
     // add one value column for every column listed in values.
     var that = this;
     var valuecols = [];
@@ -593,8 +593,8 @@ Afterquery.prototype.groupBy = function(ingrid, keys, values) {
         }
         var colnum = that.keyToColNum(ingrid, field);
         if (!func) {
-          if (ingrid.types[colnum] === Afterquery.T_NUM ||
-              ingrid.types[colnum] === Afterquery.T_BOOL) {
+          if (ingrid.types[colnum] === AfterqueryObj.T_NUM ||
+              ingrid.types[colnum] === AfterqueryObj.T_BOOL) {
             func = that.agg_funcs.sum;
           } else {
             func = that.agg_funcs.count;
@@ -637,7 +637,7 @@ Afterquery.prototype.groupBy = function(ingrid, keys, values) {
   };
 
 
-Afterquery.prototype.pivotBy = function(ingrid, rowkeys, colkeys, valkeys) {
+AfterqueryObj.prototype.pivotBy = function(ingrid, rowkeys, colkeys, valkeys) {
     // We generate a list of value columns based on all the unique combinations
     // of (values in colkeys)*(column names in valkeys)
     var that = this;
@@ -698,18 +698,18 @@ Afterquery.prototype.pivotBy = function(ingrid, rowkeys, colkeys, valkeys) {
   };
 
 
-Afterquery.prototype.stringifiedCol = function(value, typ) {
-    if (typ === Afterquery.T_DATE) {
-      return Afterquery.dateToStr(value) || '';
-    } else if (typ === Afterquery.T_DATETIME) {
-      return Afterquery.dateTimeToStr(value) || '';
+AfterqueryObj.prototype.stringifiedCol = function(value, typ) {
+    if (typ === AfterqueryObj.T_DATE) {
+      return AfterqueryObj.dateToStr(value) || '';
+    } else if (typ === AfterqueryObj.T_DATETIME) {
+      return AfterqueryObj.dateTimeToStr(value) || '';
     } else {
       return (value + '') || '(none)';
     }
   };
 
 
-Afterquery.prototype.stringifiedCols = function(row, types) {
+AfterqueryObj.prototype.stringifiedCols = function(row, types) {
     var out = [];
     for (var coli in types) {
       out.push(this.stringifiedCol(row[coli], types[coli]));
@@ -718,10 +718,10 @@ Afterquery.prototype.stringifiedCols = function(row, types) {
   };
 
 
-Afterquery.prototype.treeJoinKeys = function(ingrid, nkeys) {
+AfterqueryObj.prototype.treeJoinKeys = function(ingrid, nkeys) {
     var outgrid = {
         headers: ['_tree'].concat(ingrid.headers.slice(nkeys)),
-        types: [Afterquery.T_STRING].concat(ingrid.types.slice(nkeys)),
+        types: [AfterqueryObj.T_STRING].concat(ingrid.types.slice(nkeys)),
         data: []
     };
 
@@ -736,7 +736,7 @@ Afterquery.prototype.treeJoinKeys = function(ingrid, nkeys) {
   };
 
 
-Afterquery.prototype.finishTree = function(ingrid, keys) {
+AfterqueryObj.prototype.finishTree = function(ingrid, keys) {
     if (keys.length < 1) {
       keys = ['_tree'];
     }
@@ -785,7 +785,7 @@ Afterquery.prototype.finishTree = function(ingrid, keys) {
   };
 
 
-Afterquery.prototype.invertTree = function(ingrid, key) {
+AfterqueryObj.prototype.invertTree = function(ingrid, key) {
     if (!key) {
       key = '_tree';
     }
@@ -802,7 +802,7 @@ Afterquery.prototype.invertTree = function(ingrid, key) {
   };
 
 
-Afterquery.prototype.crackTree = function(ingrid, key) {
+AfterqueryObj.prototype.crackTree = function(ingrid, key) {
     if (!key) {
       key = '_tree';
     }
@@ -815,7 +815,7 @@ Afterquery.prototype.crackTree = function(ingrid, key) {
       data: [],
       types:
         [].concat(ingrid.types.slice(0, keycol),
-                  [Afterquery.T_STRING, Afterquery.T_STRING],
+                  [AfterqueryObj.T_STRING, AfterqueryObj.T_STRING],
                   ingrid.types.slice(keycol + 1))
     };
 
@@ -842,13 +842,13 @@ Afterquery.prototype.crackTree = function(ingrid, key) {
   };
 
 
-Afterquery.prototype.splitNoEmpty = function(s, splitter) {
+AfterqueryObj.prototype.splitNoEmpty = function(s, splitter) {
     if (!s) return [];
     return s.split(splitter);
   };
 
 
-Afterquery.prototype.keysOtherThan = function(grid, keys) {
+AfterqueryObj.prototype.keysOtherThan = function(grid, keys) {
     var out = [];
     var keynames = [];
     for (var keyi in keys) {
@@ -864,7 +864,7 @@ Afterquery.prototype.keysOtherThan = function(grid, keys) {
   };
 
 
-Afterquery.prototype.doGroupBy = function(grid, argval) {
+AfterqueryObj.prototype.doGroupBy = function(grid, argval) {
     console.debug('groupBy:', argval);
     var parts = argval.split(';', 2);
     var keys = this.splitNoEmpty(parts[0], ',');
@@ -894,7 +894,7 @@ Afterquery.prototype.doGroupBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.doTreeGroupBy = function(grid, argval) {
+AfterqueryObj.prototype.doTreeGroupBy = function(grid, argval) {
     console.debug('treeGroupBy:', argval);
     var parts = argval.split(';', 2);
     var keys = this.splitNoEmpty(parts[0], ',');
@@ -916,7 +916,7 @@ Afterquery.prototype.doTreeGroupBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.doFinishTree = function(grid, argval) {
+AfterqueryObj.prototype.doFinishTree = function(grid, argval) {
     console.debug('finishTree:', argval);
     var keys = this.splitNoEmpty(argval, ',');
     console.debug('finishtree with keys', keys);
@@ -926,7 +926,7 @@ Afterquery.prototype.doFinishTree = function(grid, argval) {
   };
 
 
-Afterquery.prototype.doInvertTree = function(grid, argval) {
+AfterqueryObj.prototype.doInvertTree = function(grid, argval) {
     console.debug('invertTree:', argval);
     var keys = this.splitNoEmpty(argval, ',');
     console.debug('invertTree with key', keys[0]);
@@ -936,7 +936,7 @@ Afterquery.prototype.doInvertTree = function(grid, argval) {
   };
 
 
-Afterquery.prototype.doCrackTree = function(grid, argval) {
+AfterqueryObj.prototype.doCrackTree = function(grid, argval) {
     console.debug('crackTree:', argval);
     var keys = this.splitNoEmpty(argval, ',');
     console.debug('cracktree with key', keys[0]);
@@ -946,7 +946,7 @@ Afterquery.prototype.doCrackTree = function(grid, argval) {
   };
 
 
-Afterquery.prototype.doPivotBy = function(grid, argval) {
+AfterqueryObj.prototype.doPivotBy = function(grid, argval) {
     console.debug('pivotBy:', argval);
 
     // the parts are rowkeys;colkeys;values
@@ -976,16 +976,16 @@ Afterquery.prototype.doPivotBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.filterBy = function(ingrid, key, op, values) {
+AfterqueryObj.prototype.filterBy = function(ingrid, key, op, values) {
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     var keycol = this.keyToColNum(ingrid, key);
     var wantvals = [];
     for (var valuei in values) {
-      if (ingrid.types[keycol] === Afterquery.T_NUM) {
+      if (ingrid.types[keycol] === AfterqueryObj.T_NUM) {
         wantvals.push(parseFloat(values[valuei]));
-      } else if (ingrid.types[keycol] === Afterquery.T_DATE ||
-                 ingrid.types[keycol] === Afterquery.T_DATETIME) {
-        wantvals.push(Afterquery.dateTimeToStr(Afterquery.myParseDate(values[valuei])));
+      } else if (ingrid.types[keycol] === AfterqueryObj.T_DATE ||
+                 ingrid.types[keycol] === AfterqueryObj.T_DATETIME) {
+        wantvals.push(AfterqueryObj.dateTimeToStr(AfterqueryObj.myParseDate(values[valuei])));
       } else {
         wantvals.push(values[valuei]);
       }
@@ -998,8 +998,8 @@ Afterquery.prototype.filterBy = function(ingrid, key, op, values) {
         cell = null;
       }
       var keytype = ingrid.types[keycol];
-      if (keytype == Afterquery.T_DATE || keytype == Afterquery.T_DATETIME) {
-        cell = Afterquery.dateTimeToStr(cell);
+      if (keytype == AfterqueryObj.T_DATE || keytype == AfterqueryObj.T_DATETIME) {
+        cell = AfterqueryObj.dateTimeToStr(cell);
       }
       var found = 0;
       for (var valuei in wantvals) {
@@ -1028,7 +1028,7 @@ Afterquery.prototype.filterBy = function(ingrid, key, op, values) {
   };
 
 
-Afterquery.prototype.trySplitOne = function(argval, splitstr) {
+AfterqueryObj.prototype.trySplitOne = function(argval, splitstr) {
     var pos = argval.indexOf(splitstr);
     if (pos >= 0) {
       return [argval.substr(0, pos).trim(),
@@ -1039,7 +1039,7 @@ Afterquery.prototype.trySplitOne = function(argval, splitstr) {
   };
 
 
-Afterquery.prototype.doFilterBy = function(grid, argval) {
+AfterqueryObj.prototype.doFilterBy = function(grid, argval) {
     console.debug('filterBy:', argval);
     var ops = ['>=', '<=', '==', '!=', '<>', '>', '<', '='];
     var parts;
@@ -1058,7 +1058,7 @@ Afterquery.prototype.doFilterBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.queryBy = function(ingrid, words) {
+AfterqueryObj.prototype.queryBy = function(ingrid, words) {
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     for (var rowi in ingrid.data) {
       var row = ingrid.data[rowi];
@@ -1090,7 +1090,7 @@ Afterquery.prototype.queryBy = function(ingrid, words) {
   };
 
 
-Afterquery.prototype.doQueryBy = function(grid, argval) {
+AfterqueryObj.prototype.doQueryBy = function(grid, argval) {
     console.debug('queryBy:', argval);
     grid = this.queryBy(grid, argval.split(','));
     console.debug('grid:', grid);
@@ -1098,7 +1098,7 @@ Afterquery.prototype.doQueryBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.deltaBy = function(ingrid, keys) {
+AfterqueryObj.prototype.deltaBy = function(ingrid, keys) {
     var outgrid = {headers: ingrid.headers, data: [], types: ingrid.types};
     for (var rowi = 0; rowi < ingrid.data.length; rowi++) {
       var row = ingrid.data[rowi];
@@ -1123,7 +1123,7 @@ Afterquery.prototype.deltaBy = function(ingrid, keys) {
         var val = row[keycol];
         if (val == undefined) {
           continue;
-        } else if (outgrid.types[keycol] === Afterquery.T_NUM) {
+        } else if (outgrid.types[keycol] === AfterqueryObj.T_NUM) {
           if (prev_val != undefined) {
             if (val > prev_val) {
               var new_val = val - prev_val;
@@ -1141,7 +1141,7 @@ Afterquery.prototype.deltaBy = function(ingrid, keys) {
   };
 
 
-Afterquery.prototype.doDeltaBy = function(grid, argval) {
+AfterqueryObj.prototype.doDeltaBy = function(grid, argval) {
     console.debug('deltaBy:', argval);
     grid = this.deltaBy(grid, argval.split(','));
     console.debug('grid:', grid);
@@ -1149,7 +1149,7 @@ Afterquery.prototype.doDeltaBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.unselectBy = function(ingrid, keys) {
+AfterqueryObj.prototype.unselectBy = function(ingrid, keys) {
     var outgrid = {headers: [], data: [], types: []};
     var keycols = {};
     for (var keyi in keys) {
@@ -1179,7 +1179,7 @@ Afterquery.prototype.unselectBy = function(ingrid, keys) {
   };
 
 
-Afterquery.prototype.doUnselectBy = function(grid, argval) {
+AfterqueryObj.prototype.doUnselectBy = function(grid, argval) {
     console.debug('unselectBy:', argval);
     grid = this.unselectBy(grid, argval.split(','));
     console.debug('grid:', grid);
@@ -1187,7 +1187,7 @@ Afterquery.prototype.doUnselectBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.orderBy = function(grid, keys) {
+AfterqueryObj.prototype.orderBy = function(grid, keys) {
     var that = this;
     var keycols = [];
     for (var keyi in keys) {
@@ -1204,7 +1204,7 @@ Afterquery.prototype.orderBy = function(grid, keys) {
       for (var keyi in keycols) {
         var keycol = keycols[keyi][0], invert = keycols[keyi][1];
         var av = a[keycol], bv = b[keycol];
-        if (grid.types[keycol] === Afterquery.T_NUM) {
+        if (grid.types[keycol] === AfterqueryObj.T_NUM) {
           av = parseFloat(av);
           bv = parseFloat(bv);
         }
@@ -1224,7 +1224,7 @@ Afterquery.prototype.orderBy = function(grid, keys) {
   };
 
 
-Afterquery.prototype.doOrderBy = function(grid, argval) {
+AfterqueryObj.prototype.doOrderBy = function(grid, argval) {
     console.debug('orderBy:', argval);
     grid = this.orderBy(grid, argval.split(','));
     console.debug('grid:', grid);
@@ -1232,11 +1232,11 @@ Afterquery.prototype.doOrderBy = function(grid, argval) {
   };
 
 
-Afterquery.prototype.extractRegexp = function(grid, colname, regexp) {
+AfterqueryObj.prototype.extractRegexp = function(grid, colname, regexp) {
     var r = RegExp(regexp);
     var colnum = this.keyToColNum(grid, colname);
     var typ = grid.types[colnum];
-    grid.types[colnum] = Afterquery.T_STRING;
+    grid.types[colnum] = AfterqueryObj.T_STRING;
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       var match = r.exec(this.stringifiedCol(row[colnum], typ));
@@ -1250,7 +1250,7 @@ Afterquery.prototype.extractRegexp = function(grid, colname, regexp) {
   };
 
 
-Afterquery.prototype.doExtractRegexp = function(grid, argval) {
+AfterqueryObj.prototype.doExtractRegexp = function(grid, argval) {
     console.debug('extractRegexp:', argval);
     var parts = this.trySplitOne(argval, '=');
     var colname = parts[0], regexp = parts[1];
@@ -1263,7 +1263,7 @@ Afterquery.prototype.doExtractRegexp = function(grid, argval) {
   };
 
 
-Afterquery.prototype.quantize = function(grid, colname, quants) {
+AfterqueryObj.prototype.quantize = function(grid, colname, quants) {
     var colnum = this.keyToColNum(grid, colname);
     if (quants.length == 0) {
       throw new Error('quantize needs a bin size or list of edges');
@@ -1303,7 +1303,7 @@ Afterquery.prototype.quantize = function(grid, colname, quants) {
   };
 
 
-Afterquery.prototype.doQuantize = function(grid, argval) {
+AfterqueryObj.prototype.doQuantize = function(grid, argval) {
     console.debug('quantize:', argval);
     var parts = this.trySplitOne(argval, '=');
     var colname = parts[0], quants = parts[1].split(',');
@@ -1313,18 +1313,18 @@ Afterquery.prototype.doQuantize = function(grid, argval) {
   };
 
 
-Afterquery.prototype.yspread = function(grid) {
+AfterqueryObj.prototype.yspread = function(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       var total = 0;
       for (var coli in row) {
-        if (grid.types[coli] == Afterquery.T_NUM && row[coli]) {
+        if (grid.types[coli] == AfterqueryObj.T_NUM && row[coli]) {
           total += Math.abs(row[coli] * 1);
         }
       }
       if (!total) total = 1;
       for (var coli in row) {
-        if (grid.types[coli] == Afterquery.T_NUM && row[coli]) {
+        if (grid.types[coli] == AfterqueryObj.T_NUM && row[coli]) {
           row[coli] = row[coli] * 1 / total;
         }
       }
@@ -1333,7 +1333,7 @@ Afterquery.prototype.yspread = function(grid) {
   };
 
 
-Afterquery.prototype.doYSpread = function(grid, argval) {
+AfterqueryObj.prototype.doYSpread = function(grid, argval) {
     console.debug('yspread:', argval);
     if (argval) {
       throw new Error('yspread: no argument expected');
@@ -1344,7 +1344,7 @@ Afterquery.prototype.doYSpread = function(grid, argval) {
   };
 
 
-Afterquery.prototype.doLimit = function(ingrid, limit) {
+AfterqueryObj.prototype.doLimit = function(ingrid, limit) {
     limit = parseInt(limit);
     if (ingrid.data.length > limit) {
       return {
@@ -1358,7 +1358,7 @@ Afterquery.prototype.doLimit = function(ingrid, limit) {
   };
 
 
-Afterquery.prototype.limitDecimalPrecision = function(grid) {
+AfterqueryObj.prototype.limitDecimalPrecision = function(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       for (var coli in row) {
@@ -1372,11 +1372,11 @@ Afterquery.prototype.limitDecimalPrecision = function(grid) {
   };
 
 
-Afterquery.prototype.fillNullsWithZero = function(grid) {
+AfterqueryObj.prototype.fillNullsWithZero = function(grid) {
     for (var rowi in grid.data) {
       var row = grid.data[rowi];
       for (var coli in row) {
-        if (grid.types[coli] === Afterquery.T_NUM && row[coli] == undefined) {
+        if (grid.types[coli] === AfterqueryObj.T_NUM && row[coli] == undefined) {
           row[coli] = 0;
         }
       }
@@ -1385,32 +1385,32 @@ Afterquery.prototype.fillNullsWithZero = function(grid) {
   };
 
 
-Afterquery.prototype.isString = function(v) {
+AfterqueryObj.prototype.isString = function(v) {
     return v.charAt !== undefined;
   };
 
 
-Afterquery.prototype.isArray = function(v) {
+AfterqueryObj.prototype.isArray = function(v) {
     return v.splice !== undefined;
   };
 
 
-Afterquery.prototype.isObject = function(v) {
+AfterqueryObj.prototype.isObject = function(v) {
     return typeof(v) === 'object';
   };
 
 
-Afterquery.prototype.isDate = function(v) {
+AfterqueryObj.prototype.isDate = function(v) {
     return v.getDate !== undefined;
   };
 
 
-Afterquery.prototype.isScalar = function(v) {
+AfterqueryObj.prototype.isScalar = function(v) {
     return v == undefined || this.isString(v) || !this.isObject(v) || this.isDate(v);
   };
 
 
-Afterquery.prototype.check2d = function(rawdata) {
+AfterqueryObj.prototype.check2d = function(rawdata) {
     if (!this.isArray(rawdata)) return false;
     for (var rowi = 0; rowi < rawdata.length && rowi < 5; rowi++) {
       var row = rawdata[rowi];
@@ -1424,7 +1424,7 @@ Afterquery.prototype.check2d = function(rawdata) {
   };
 
 
-Afterquery.prototype._copyObj = function(out, v) {
+AfterqueryObj.prototype._copyObj = function(out, v) {
     for (var key in v) {
       out[key] = v[key];
     }
@@ -1432,12 +1432,12 @@ Afterquery.prototype._copyObj = function(out, v) {
   };
 
 
-Afterquery.prototype.copyObj = function(v) {
+AfterqueryObj.prototype.copyObj = function(v) {
     return this._copyObj({}, v);
   };
 
 
-Afterquery.prototype.multiplyLists = function(out, l1, l2) {
+AfterqueryObj.prototype.multiplyLists = function(out, l1, l2) {
     if (l1 === undefined) throw new Error('l1 undefined');
     if (l2 === undefined) throw new Error('l2 undefined');
     for (var l1i in l1) {
@@ -1453,7 +1453,7 @@ Afterquery.prototype.multiplyLists = function(out, l1, l2) {
   };
 
 
-Afterquery.prototype.flattenDict = function(headers, coldict, rowtmp, d) {
+AfterqueryObj.prototype.flattenDict = function(headers, coldict, rowtmp, d) {
     var out = [];
     var lists = [];
     for (var key in d) {
@@ -1485,7 +1485,7 @@ Afterquery.prototype.flattenDict = function(headers, coldict, rowtmp, d) {
   };
 
 
-Afterquery.prototype.flattenList = function(headers, coldict, rows) {
+AfterqueryObj.prototype.flattenList = function(headers, coldict, rows) {
     var out = [];
     for (var rowi in rows) {
       var row = rows[rowi];
@@ -1497,7 +1497,7 @@ Afterquery.prototype.flattenList = function(headers, coldict, rows) {
   };
 
 
-Afterquery.prototype.gridFromData = function(rawdata) {
+AfterqueryObj.prototype.gridFromData = function(rawdata) {
     if (rawdata && rawdata.headers && rawdata.data && rawdata.types) {
       // already in grid format
       return rawdata;
@@ -1574,18 +1574,18 @@ Afterquery.prototype.gridFromData = function(rawdata) {
     } else {
       throw new Error("don't know how to parse this json layout, sorry!");
     }
-    types = Afterquery.guessTypes(data);
+    types = AfterqueryObj.guessTypes(data);
     this.convertTypes(data, types);
     return {headers: headers, data: data, types: types};
   };
 
 
-Afterquery.prototype.enqueue = function(queue, stepname, func) {
+AfterqueryObj.prototype.enqueue = function(queue, stepname, func) {
     queue.push([stepname, func]);
   };
 
 
-Afterquery.prototype.runqueue = function(queue, ingrid, done, showstatus, wrap_each, after_each) {
+AfterqueryObj.prototype.runqueue = function(queue, ingrid, done, showstatus, wrap_each, after_each) {
     var step = function(i) {
       if (i < queue.length) {
         var el = queue[i];
@@ -1620,14 +1620,14 @@ Afterquery.prototype.runqueue = function(queue, ingrid, done, showstatus, wrap_e
   }
 
 
-Afterquery.prototype.maybeSet = function(dict, key, value) {
+AfterqueryObj.prototype.maybeSet = function(dict, key, value) {
     if (!(key in dict)) {
       dict[key] = value;
     }
   };
 
 
-Afterquery.prototype.addTransforms = function(queue, args) {
+AfterqueryObj.prototype.addTransforms = function(queue, args) {
     var that = this;
     var trace = args.get('trace');
     var argi;
@@ -1679,7 +1679,7 @@ Afterquery.prototype.addTransforms = function(queue, args) {
   };
 
 
-Afterquery.prototype.dyIndexFromX = function(dychart, x) {
+AfterqueryObj.prototype.dyIndexFromX = function(dychart, x) {
     // TODO(apenwarr): consider a binary search
     for (var i = dychart.numRows() - 1; i >= 0; i--) {
       if (dychart.getValue(i, 0) <= x) {
@@ -1690,7 +1690,7 @@ Afterquery.prototype.dyIndexFromX = function(dychart, x) {
   };
 
 
-Afterquery.prototype.createTracesChart = function(grid, el, colsPerChart) {
+AfterqueryObj.prototype.createTracesChart = function(grid, el, colsPerChart) {
     var that = this;
     var charts = [];
     var xlines = [];
@@ -1803,7 +1803,7 @@ Afterquery.prototype.createTracesChart = function(grid, el, colsPerChart) {
   };
 
 
-Afterquery.prototype.addRenderers = function(queue, args) {
+AfterqueryObj.prototype.addRenderers = function(queue, args) {
     var that = this;
     var trace = args.get('trace');
     var chartops = args.get('chart');
@@ -1903,7 +1903,7 @@ Afterquery.prototype.addRenderers = function(queue, args) {
           charttype == 'traces+minmax') {
         datatable = grid;
       } else {
-        datatable = Afterquery.dataToGvizTable(grid, gridoptions);
+        datatable = AfterqueryObj.dataToGvizTable(grid, gridoptions);
 
         var dateformat = new google.visualization.DateFormat({
           pattern: 'yyyy-MM-dd'
@@ -1912,9 +1912,9 @@ Afterquery.prototype.addRenderers = function(queue, args) {
           pattern: 'yyyy-MM-dd HH:mm:ss'
         });
         for (var coli = 0; coli < grid.types.length; coli++) {
-          if (grid.types[coli] === Afterquery.T_DATE) {
+          if (grid.types[coli] === AfterqueryObj.T_DATE) {
             dateformat.format(datatable, coli);
-          } else if (grid.types[coli] === Afterquery.T_DATETIME) {
+          } else if (grid.types[coli] === AfterqueryObj.T_DATETIME) {
             datetimeformat.format(datatable, coli);
           }
         }
@@ -1944,7 +1944,7 @@ Afterquery.prototype.addRenderers = function(queue, args) {
     });
   };
 
-Afterquery.prototype.scanGVizChartOptions = function(args, options) {
+AfterqueryObj.prototype.scanGVizChartOptions = function(args, options) {
     // Parse args to be sent to GViz.
     var allArgs = args['all'];
     for (var i in allArgs) {
@@ -1972,7 +1972,7 @@ Afterquery.prototype.scanGVizChartOptions = function(args, options) {
     console.debug(options);
   };
 
-Afterquery.prototype.addGVizChartOption = function(options, key, value) {
+AfterqueryObj.prototype.addGVizChartOption = function(options, key, value) {
     if (key.indexOf('.') > -1) {
       var subObjects = key.split('.');
       if (!options[subObjects[0]]) {
@@ -1985,7 +1985,7 @@ Afterquery.prototype.addGVizChartOption = function(options, key, value) {
     }
   };
 
-Afterquery.prototype.finishQueue = function(queue, args, done) {
+AfterqueryObj.prototype.finishQueue = function(queue, args, done) {
     var that = this;
     var trace = args.get('trace');
     if (trace) {
@@ -2001,7 +2001,7 @@ Afterquery.prototype.finishQueue = function(queue, args, done) {
         var viewel = $('#step' + stepi + ' .grid');
         if (prevdata != grid.data) {
           var t = new google.visualization.Table(viewel[0]);
-          var datatable = Afterquery.dataToGvizTable({
+          var datatable = AfterqueryObj.dataToGvizTable({
             headers: grid.headers,
             data: grid.data.slice(0, 1000),
             types: grid.types
@@ -2022,7 +2022,7 @@ Afterquery.prototype.finishQueue = function(queue, args, done) {
   };
 
 
-Afterquery.prototype.gotError = function(url, jqxhr, status) {
+AfterqueryObj.prototype.gotError = function(url, jqxhr, status) {
     this.showstatus('');
     $(this.elid('vizraw')).html('<a href="' + encodeURI(url) + '">' +
                       encodeURI(url) +
@@ -2033,7 +2033,7 @@ Afterquery.prototype.gotError = function(url, jqxhr, status) {
   };
 
 
-Afterquery.prototype.argsToArray = function(args) {
+AfterqueryObj.prototype.argsToArray = function(args) {
     // call Array's slice() function on an 'arguments' structure, which is
     // like an array but missing functions like slice().  The result is a
     // real Array object, which is more useful.
@@ -2041,7 +2041,7 @@ Afterquery.prototype.argsToArray = function(args) {
   };
 
 
-Afterquery.prototype.wrap = function(func) {
+AfterqueryObj.prototype.wrap = function(func) {
     // pre_args is the arguments as passed at wrap() time
     var that = this;
     var pre_args = this.argsToArray(arguments).slice(1);
@@ -2067,7 +2067,7 @@ Afterquery.prototype.wrap = function(func) {
   };
 
 
-Afterquery.prototype.urlMinusPath = function(url) {
+AfterqueryObj.prototype.urlMinusPath = function(url) {
     var URL_RE = RegExp('^((\\w+:)?(//[^/]*)?)');
     var g = URL_RE.exec(url);
     if (g && g[1]) {
@@ -2078,14 +2078,14 @@ Afterquery.prototype.urlMinusPath = function(url) {
   };
 
 
-Afterquery.prototype.checkUrlSafety = function(url) {
+AfterqueryObj.prototype.checkUrlSafety = function(url) {
     if (/[<>"''"]/.exec(url)) {
       throw new Error('unsafe url detected. encoded=' + encodedURI(url));
     }
   };
 
 
-Afterquery.prototype.extendDataUrl = function(url) {
+AfterqueryObj.prototype.extendDataUrl = function(url) {
     // some services expect callback=, some expect jsonp=, so supply both
     var plus = 'callback=jsonp&jsonp=jsonp';
     var hostpart = this.urlMinusPath(url);
@@ -2102,7 +2102,7 @@ Afterquery.prototype.extendDataUrl = function(url) {
   };
 
 
-Afterquery.prototype.extractJsonFromJsonp = function(text, success_func) {
+AfterqueryObj.prototype.extractJsonFromJsonp = function(text, success_func) {
     var data = text.trim();
     var start = data.indexOf('jsonp(');
     if (start >= 0) {
@@ -2113,7 +2113,7 @@ Afterquery.prototype.extractJsonFromJsonp = function(text, success_func) {
   };
 
 
-Afterquery.prototype.getUrlData_xhr = function(url, success_func, error_func) {
+AfterqueryObj.prototype.getUrlData_xhr = function(url, success_func, error_func) {
     var that = this;
     jQuery.support.cors = true;
     jQuery.ajax(url, {
@@ -2126,7 +2126,7 @@ Afterquery.prototype.getUrlData_xhr = function(url, success_func, error_func) {
   };
 
 
-Afterquery.prototype.getUrlData_jsonp = function(url, success_func, error_func) {
+AfterqueryObj.prototype.getUrlData_jsonp = function(url, success_func, error_func) {
     var that = this;
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
@@ -2232,7 +2232,7 @@ Afterquery.prototype.getUrlData_jsonp = function(url, success_func, error_func) 
   };
 
 
-Afterquery.prototype.getUrlData = function(url, success_func, error_func) {
+AfterqueryObj.prototype.getUrlData = function(url, success_func, error_func) {
     console.debug('fetching data url:', url);
     var onError = function(xhr, msg) {
       console.debug('xhr returned error:', msg);
@@ -2243,7 +2243,7 @@ Afterquery.prototype.getUrlData = function(url, success_func, error_func) {
   };
 
 
-Afterquery.prototype.addUrlGetters = function(queue, args, startdata) {
+AfterqueryObj.prototype.addUrlGetters = function(queue, args, startdata) {
     var that = this;
     if (!startdata) {
       var url = args.get('url');
@@ -2271,8 +2271,8 @@ Afterquery.prototype.addUrlGetters = function(queue, args, startdata) {
   };
 
 
-Afterquery.prototype.exec = function(query, startdata, done) {
-    var args = Afterquery.parseArgs(query);
+AfterqueryObj.prototype.exec = function(query, startdata, done) {
+    var args = AfterqueryObj.parseArgs(query);
     var queue = [];
     this.addUrlGetters(queue, args, startdata);
     this.addTransforms(queue, args);
@@ -2280,8 +2280,8 @@ Afterquery.prototype.exec = function(query, startdata, done) {
   };
 
 
-Afterquery.prototype.render = function(query, startdata, done) {
-    var args = Afterquery.parseArgs(query);
+AfterqueryObj.prototype.render = function(query, startdata, done) {
+    var args = AfterqueryObj.parseArgs(query);
     var editlink = args.get('editlink');
     if (editlink == 0) {
       $(thid.elid('editmenu')).hide();
@@ -2297,6 +2297,6 @@ Afterquery.prototype.render = function(query, startdata, done) {
 
 var afterquery = {};
 afterquery.render = function(query, startdata, done) {
-  var aq = new Afterquery();
+  var aq = new AfterqueryObj();
   aq.render(query, startdata, done);
 }
