@@ -64,10 +64,8 @@ function AfterqueryObj(options) {
 AfterqueryObj.prototype.elid = function(id) {
     if(this.root_id) {
 
-      console.log("#"+this.root_id+" ."+id);
       return "#"+this.root_id+" ."+id;
     }
-	console.log("#"+id);
     return "#"+id;
 }
 
@@ -2095,7 +2093,12 @@ AfterqueryObj.prototype.extendDataUrl = function(url) {
     // some services expect callback=, some expect jsonp=, so supply both
     var plus = 'callback=jsonp&jsonp=jsonp';
     var hostpart = this.urlMinusPath(url);
-    var auth = 0;//localStorage[['auth', hostpart]];
+	var auth;
+	if( (/\/\//.exec(url))) {
+		// No "//"? Probably a local file, and this operation
+		// is doomed.
+		auth = localStorage[['auth', hostpart]];
+	}
     if (auth) {
       plus += '&auth=' + encodeURIComponent(auth);
     }
@@ -2306,3 +2309,5 @@ afterquery.render = function(query, startdata, done) {
   var aq = new AfterqueryObj();
   aq.render(query, startdata, done);
 }
+
+
