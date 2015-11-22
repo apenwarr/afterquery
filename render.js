@@ -558,7 +558,7 @@ AfterqueryObj.prototype.agg_funcs = {
 	color: function(l,aqo) {
       for (var i in l) {
         var v = l[i];
-        if (!(v in aqo.colormap)) { // TODO: Doomed this?
+        if (!(v in aqo.colormap)) {
           aqo.colormap[v] = ++aqo.next_color;
         }
         return aqo.colormap[v];
