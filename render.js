@@ -555,14 +555,13 @@ AfterqueryObj.prototype.agg_funcs = {
       }
       return Math.sqrt(sumsq);
     },
-
-    color: function(l) {
+	color: function(l,aqo) {
       for (var i in l) {
         var v = l[i];
-        if (!(v in this.colormap)) { // TODO: Doomed this?
-          this.colormap[v] = ++this.next_color;
+        if (!(v in aqo.colormap)) { // TODO: Doomed this?
+          aqo.colormap[v] = ++aqo.next_color;
         }
-        return this.colormap[v];
+        return aqo.colormap[v];
       }
     }
   };
@@ -633,7 +632,7 @@ AfterqueryObj.prototype.groupBy = function(ingrid, keys, values) {
       for (var valuei in values) {
         var outcoli = keys.length + parseInt(valuei);
         var func = valuefuncs[valuei];
-        row[outcoli] = func(row[outcoli]);
+        row[outcoli] = func(row[outcoli], this);
       }
     }
 
