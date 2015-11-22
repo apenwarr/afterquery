@@ -21,34 +21,6 @@
 
 'use strict';
 
-/*
-  // To appease v8shell
-  var console, localStorage;
-  try {
-    console = window.console;
-  }
-  catch (ReferenceError) {
-    console = {
-      debug: print
-    };
-  }
-  try {
-    localStorage = window.localStorage;
-  } catch (ReferenceError) {
-    localStorage = {};
-  }
-
-  // For konqueror compatibility
-  if (!console) {
-    console = window.console;
-  }
-  if (!console) {
-    console = {
-      debug: function() {}
-    };
-  }
-  */
-
 function AfterqueryObj(options) {
   if(options === null || options === undefined) {
     options = {};
@@ -78,7 +50,7 @@ AfterqueryObj.prototype.showstatus = function(s, s2) {
     $(this.elid('statustext')).html(s);
     $(this.elid('statussub')).text(s2 || '');
     if (s || s2) {
-      console.debug('status message:', s, s2);
+      this.console.debug('status message:', s, s2);
       $(this.elid('vizstatus')).show();
     } else {
       $(this.elid('vizstatus')).hide();
@@ -107,8 +79,8 @@ AfterqueryObj.parseArgs = function(query) {
       out[key] = value;
       outlist.push([key, value]);
     }
-    console.debug('query args:', out);
-    console.debug('query arglist:', outlist);
+    AfterqueryObj.prototype.console.debug('query args:', out);
+    AfterqueryObj.prototype.console.debug('query arglist:', outlist);
     return {
       get: function(key) { return out[key]; },
       all: outlist
@@ -214,7 +186,7 @@ AfterqueryObj.dataToGvizTable = function(grid, options) {
             mn = minval;
             mx = maxval;
           } else if (options.intensify == 'y') {
-            console.debug(colmin, colmax);
+            AfterqueryObj.prototype.console.debug(colmin, colmax);
             mn = colmin[coli];
             mx = colmax[coli];
           } else if (options.intensify == 'x') {
@@ -223,7 +195,7 @@ AfterqueryObj.dataToGvizTable = function(grid, options) {
             throw new Error("unknown intensify= mode '" +
                             options.intensify + "'");
           }
-          console.debug('coli=' + coli + ' mn=' + mn + ' mx=' + mx);
+          AfterqueryObj.prototype.console.debug('coli=' + coli + ' mn=' + mn + ' mx=' + mx);
           formatter.addGradientRange(mn - 1, 0, null, '#f88', '#fff');
           formatter.addGradientRange(0, mx + 1, null, '#fff', '#88f');
           formatter.format(datatable, parseInt(coli));
@@ -268,7 +240,7 @@ AfterqueryObj.guessTypes = function(data) {
               cell == 'True' || cell == 'False')) impossible[coli] |= CANT_BOOL;
       }
     }
-    console.debug('guessTypes impossibility list:', impossible);
+    AfterqueryObj.prototype.console.debug('guessTypes impossibility list:', impossible);
     var types = [];
     for (var coli in impossible) {
       var imp = impossible[coli];
@@ -674,8 +646,8 @@ AfterqueryObj.prototype.pivotBy = function(ingrid, rowkeys, colkeys, valkeys) {
           }
         }
       }
-      console.debug('pivot colkey_outcols', colkey_outcols);
-      console.debug('pivot valuecols:', valuecols);
+      that.console.debug('pivot colkey_outcols', colkey_outcols);
+      that.console.debug('pivot valuecols:', valuecols);
     };
 
     // by the time pivotBy is called, we're guaranteed that there's only one
@@ -868,7 +840,7 @@ AfterqueryObj.prototype.keysOtherThan = function(grid, keys) {
 
 
 AfterqueryObj.prototype.doGroupBy = function(grid, argval) {
-    console.debug('groupBy:', argval);
+    this.console.debug('groupBy:', argval);
     var parts = argval.split(';', 2);
     var keys = this.splitNoEmpty(parts[0], ',');
     var values;
@@ -890,15 +862,15 @@ AfterqueryObj.prototype.doGroupBy = function(grid, argval) {
       // remaining non-key columns as values.
       values = this.keysOtherThan(grid, keys);
     }
-    console.debug('grouping by', keys, values);
+    this.console.debug('grouping by', keys, values);
     grid = this.groupBy(grid, keys, values);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
 
 AfterqueryObj.prototype.doTreeGroupBy = function(grid, argval) {
-    console.debug('treeGroupBy:', argval);
+    this.console.debug('treeGroupBy:', argval);
     var parts = argval.split(';', 2);
     var keys = this.splitNoEmpty(parts[0], ',');
     var values;
@@ -911,46 +883,46 @@ AfterqueryObj.prototype.doTreeGroupBy = function(grid, argval) {
       // remaining non-key columns as values.
       values = this.keysOtherThan(grid, keys);
     }
-    console.debug('treegrouping by', keys, values);
+    this.console.debug('treegrouping by', keys, values);
     grid = this.groupBy(grid, keys, values);
     grid = this.treeJoinKeys(grid, keys.length);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
 
 AfterqueryObj.prototype.doFinishTree = function(grid, argval) {
-    console.debug('finishTree:', argval);
+    this.console.debug('finishTree:', argval);
     var keys = this.splitNoEmpty(argval, ',');
-    console.debug('finishtree with keys', keys);
+    this.console.debug('finishtree with keys', keys);
     grid = this.finishTree(grid, keys);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
 
 AfterqueryObj.prototype.doInvertTree = function(grid, argval) {
-    console.debug('invertTree:', argval);
+    this.console.debug('invertTree:', argval);
     var keys = this.splitNoEmpty(argval, ',');
-    console.debug('invertTree with key', keys[0]);
+    this.console.debug('invertTree with key', keys[0]);
     grid = this.invertTree(grid, keys[0]);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
 
 AfterqueryObj.prototype.doCrackTree = function(grid, argval) {
-    console.debug('crackTree:', argval);
+    this.console.debug('crackTree:', argval);
     var keys = this.splitNoEmpty(argval, ',');
-    console.debug('cracktree with key', keys[0]);
+    this.console.debug('cracktree with key', keys[0]);
     grid = this.crackTree(grid, keys[0]);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
 
 AfterqueryObj.prototype.doPivotBy = function(grid, argval) {
-    console.debug('pivotBy:', argval);
+    this.console.debug('pivotBy:', argval);
 
     // the parts are rowkeys;colkeys;values
     var parts = argval.split(';', 3);
@@ -970,7 +942,7 @@ AfterqueryObj.prototype.doPivotBy = function(grid, argval) {
     // first group by the rowkeys+colkeys, so there is only one row for each
     // unique rowkeys+colkeys combination.
     grid = this.groupBy(grid, rowkeys.concat(colkeys), values);
-    console.debug('tmpgrid:', grid);
+    this.console.debug('tmpgrid:', grid);
 
     // now actually do the pivot.
     grid = this.pivotBy(grid, rowkeys, colkeys, values);
@@ -1043,16 +1015,16 @@ AfterqueryObj.prototype.trySplitOne = function(argval, splitstr) {
 
 
 AfterqueryObj.prototype.doFilterBy = function(grid, argval) {
-    console.debug('filterBy:', argval);
+    this.console.debug('filterBy:', argval);
     var ops = ['>=', '<=', '==', '!=', '<>', '>', '<', '='];
     var parts;
     for (var opi in ops) {
       var op = ops[opi];
       if ((parts = this.trySplitOne(argval, op))) {
         var matches = parts[1].split(',');
-        console.debug('filterBy parsed:', parts[0], op, matches);
+        this.console.debug('filterBy parsed:', parts[0], op, matches);
         grid = this.filterBy(grid, parts[0], op, matches);
-        console.debug('grid:', grid);
+        this.console.debug('grid:', grid);
         return grid;
       }
     }
@@ -1094,9 +1066,9 @@ AfterqueryObj.prototype.queryBy = function(ingrid, words) {
 
 
 AfterqueryObj.prototype.doQueryBy = function(grid, argval) {
-    console.debug('queryBy:', argval);
+    this.console.debug('queryBy:', argval);
     grid = this.queryBy(grid, argval.split(','));
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
@@ -1145,9 +1117,9 @@ AfterqueryObj.prototype.deltaBy = function(ingrid, keys) {
 
 
 AfterqueryObj.prototype.doDeltaBy = function(grid, argval) {
-    console.debug('deltaBy:', argval);
+    this.console.debug('deltaBy:', argval);
     grid = this.deltaBy(grid, argval.split(','));
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
@@ -1183,9 +1155,9 @@ AfterqueryObj.prototype.unselectBy = function(ingrid, keys) {
 
 
 AfterqueryObj.prototype.doUnselectBy = function(grid, argval) {
-    console.debug('unselectBy:', argval);
+    this.console.debug('unselectBy:', argval);
     grid = this.unselectBy(grid, argval.split(','));
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
@@ -1202,7 +1174,7 @@ AfterqueryObj.prototype.orderBy = function(grid, keys) {
       }
       keycols.push([this.keyToColNum(grid, key), invert]);
     }
-    console.debug('sort keycols', keycols);
+    this.console.debug('sort keycols', keycols);
     var comparator = function(a, b) {
       for (var keyi in keycols) {
         var keycol = keycols[keyi][0], invert = keycols[keyi][1];
@@ -1228,9 +1200,9 @@ AfterqueryObj.prototype.orderBy = function(grid, keys) {
 
 
 AfterqueryObj.prototype.doOrderBy = function(grid, argval) {
-    console.debug('orderBy:', argval);
+    this.console.debug('orderBy:', argval);
     grid = this.orderBy(grid, argval.split(','));
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
@@ -1254,14 +1226,14 @@ AfterqueryObj.prototype.extractRegexp = function(grid, colname, regexp) {
 
 
 AfterqueryObj.prototype.doExtractRegexp = function(grid, argval) {
-    console.debug('extractRegexp:', argval);
+    this.console.debug('extractRegexp:', argval);
     var parts = this.trySplitOne(argval, '=');
     var colname = parts[0], regexp = parts[1];
     if (regexp.indexOf('(') < 0) {
       throw new Error('extract_regexp should have at least one (regex group)');
     }
     grid = this.extractRegexp(grid, colname, regexp);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
@@ -1307,11 +1279,11 @@ AfterqueryObj.prototype.quantize = function(grid, colname, quants) {
 
 
 AfterqueryObj.prototype.doQuantize = function(grid, argval) {
-    console.debug('quantize:', argval);
+    this.console.debug('quantize:', argval);
     var parts = this.trySplitOne(argval, '=');
     var colname = parts[0], quants = parts[1].split(',');
     grid = this.quantize(grid, colname, quants);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
@@ -1337,12 +1309,12 @@ AfterqueryObj.prototype.yspread = function(grid) {
 
 
 AfterqueryObj.prototype.doYSpread = function(grid, argval) {
-    console.debug('yspread:', argval);
+    this.console.debug('yspread:', argval);
     if (argval) {
       throw new Error('yspread: no argument expected');
     }
     grid = this.yspread(grid);
-    console.debug('grid:', grid);
+    this.console.debug('grid:', grid);
     return grid;
   };
 
@@ -1971,8 +1943,8 @@ AfterqueryObj.prototype.scanGVizChartOptions = function(args, options) {
       // Add params for GViz API into options object.
       this.addGVizChartOption(options, key, allArgs[i][1]);
     }
-    console.debug('Options sent to GViz');
-    console.debug(options);
+    this.console.debug('Options sent to GViz');
+    this.console.debug(options);
   };
 
 AfterqueryObj.prototype.addGVizChartOption = function(options, key, value) {
@@ -2096,7 +2068,7 @@ AfterqueryObj.prototype.extendDataUrl = function(url) {
 	if( (/\/\//.exec(url))) {
 		// No "//"? Probably a local file, and this operation
 		// is doomed.
-		auth = localStorage[['auth', hostpart]];
+		auth = this.localStorage[['auth', hostpart]];
 	}
     if (auth) {
       plus += '&auth=' + encodeURIComponent(auth);
@@ -2142,7 +2114,7 @@ AfterqueryObj.prototype.getUrlData_jsonp = function(url, success_func, error_fun
     iframe.onload = function() {
       var successfunc_called;
       var real_success_func = function(data) {
-        console.debug('calling success_func');
+        that.console.debug('calling success_func');
         success_func(data);
         successfunc_called = true;
       };
@@ -2175,14 +2147,14 @@ AfterqueryObj.prototype.getUrlData_jsonp = function(url, success_func, error_fun
           } else {
             want_url = oauth2_url + '?' + plus;
           }
-          console.debug('oauth2 redirect:', want_url);
+          that.console.debug('oauth2 redirect:', want_url);
           that.checkUrlSafety(want_url);
           document.write('Click here to ' +
                          '<a target="_top" ' +
                          '  href="' + want_url +
                          '">authorize the data source</a>.');
         } else {
-          console.debug('no oauth2 service known for host', hostpart);
+          that.console.debug('no oauth2 service known for host', hostpart);
           document.write("Data source requires authorization, but I don't " +
                          'know how to oauth2 authorize urls from <b>' +
                          encodeURI(hostpart) +
@@ -2208,7 +2180,7 @@ AfterqueryObj.prototype.getUrlData_jsonp = function(url, success_func, error_fun
 
       iframe.contentWindow.onpostscript = function() {
         if (successfunc_called) {
-          console.debug('json load was successful.');
+          that.console.debug('json load was successful.');
         } else {
           that.err('Error loading data; check javascript console for details.');
           that.err('<a href="' + encodeURI(url) + '">' + encodeURI(url) + '</a>');
@@ -2241,10 +2213,11 @@ AfterqueryObj.prototype.getUrlData_jsonp = function(url, success_func, error_fun
 
 
 AfterqueryObj.prototype.getUrlData = function(url, success_func, error_func) {
-    console.debug('fetching data url:', url);
+    var that = this;
+    this.console.debug('fetching data url:', url);
     var onError = function(xhr, msg) {
-      console.debug('xhr returned error:', msg);
-      console.debug('(trying jsonp instead)');
+      that.console.debug('xhr returned error:', msg);
+      that.console.debug('(trying jsonp instead)');
       this.getUrlData_jsonp(url, success_func, error_func);
     };
     this.getUrlData_xhr(url, success_func, onError);
@@ -2255,7 +2228,7 @@ AfterqueryObj.prototype.addUrlGetters = function(queue, args, startdata) {
     var that = this;
     if (!startdata) {
       var url = args.get('url');
-      console.debug('original data url:', url);
+      this.console.debug('original data url:', url);
       if (!url) throw new Error('Missing url= in query parameter');
       if (url.indexOf('//') == 0) url = window.location.protocol + url;
       url = this.extendDataUrl(url);
@@ -2271,9 +2244,9 @@ AfterqueryObj.prototype.addUrlGetters = function(queue, args, startdata) {
     }
 
     this.enqueue(queue, 'parse', function(rawdata, done) {
-      console.debug('rawdata:', rawdata);
+      that.console.debug('rawdata:', rawdata);
       var outgrid = that.gridFromData(rawdata);
-      console.debug('grid:', outgrid);
+      that.console.debug('grid:', outgrid);
       done(outgrid);
     });
   };
@@ -2302,7 +2275,34 @@ AfterqueryObj.prototype.render = function(query, startdata, done) {
     this.finishQueue(queue, args, done);
   };
 
+// To appease v8shell
+try {
+  AfterqueryObj.prototype.console = window.console;
+}
+catch (ReferenceError) {
+  AfterqueryObj.prototype.console = {
+    debug: print
+  };
+}
+try {
+  AfterqueryObj.prototype.localStorage = window.localStorage;
+} catch (ReferenceError) {
+  AfterqueryObj.prototype.localStorage = {};
+}
 
+// For konqueror compatibility
+if (!AfterqueryObj.prototype.console) {
+  AfterqueryObj.prototype.console = window.console;
+}
+if (!AfterqueryObj.prototype.console) {
+  AfterqueryObj.prototype.console = {
+    debug: function() {}
+  };
+}
+
+
+
+// Original Afterquery interface.
 var afterquery = {};
 afterquery.render = function(query, startdata, done) {
   var aq = new AfterqueryObj();
