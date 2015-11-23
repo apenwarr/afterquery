@@ -209,6 +209,12 @@ Available transforms:
     values used to calculate the table body, so it is
     equivalent to an <b>&group=<u>rowkeys...</u>;</b>
     operation.
+
+ -  <b>&delta=<u>key1</u>,<u>key2</u></b>  
+    Replace entries for the named columns with the difference from the previous row.
+
+ -  <b>&unselect=<u>key1</u>,<u>key2</u></b>  
+    Remove the named columns.
  
  -  <b>&chart=<u>charttype</u></b>  
     Instead of showing a table of values, show a chart.  The
@@ -218,6 +224,52 @@ Available transforms:
  
  -  <b>&title=<u>title</u></b>  
     Add a title to the chart.
+
+Available functions:
+
+When a <b><u>val</u></b> is specified in a group or pivot, you can specify the function to use when grouping the value. By default numbers are <b>sum</b>med and other values are <b>count</b>ed.
+
+ -  <b>avg(<u>val</u>)</b>
+    Returns average (mean) of all entries in a list.
+
+ -  <b>cat(<u>val</u>)</b>
+    Returns a string of all entries in a list joined together with spaces.
+
+ -  <b>count(<u>val</u>)</b>
+    Returns number of entries in a list
+
+ -  <b>count_distinct(<u>val</u>)</b>
+    Returns number of distinct values in a list.
+
+ -  <b>count_nz(<u>val</u>)</b>
+    Returns number of entries in a list that are not null or 0.
+
+ -  <b>color(<u>val</u>)</b>
+    Returns a unique integer for each unique entry in the list. 
+
+ -  <b>first(<u>val</u>)</b>
+    Returns first element from a list.
+
+ -  <b>last(<u>val</u>)</b>
+    Returns last element from a list.
+
+ -  <b>max(<u>val</u>)</b>
+    Returns largest entry from the list.
+
+ -  <b>median(<u>val</u>)</b>
+    Returns median (middle-most) value from the list.
+
+ -  <b>min(<u>val</u>)</b>
+    Returns smallest entry from the list.
+
+ -  <b>only(<u>val</u>)</b>
+    If a list has only one item, returns the item. If the list is empty, returns null. Otherwise throws an error.
+
+ -  <b>stddev(<u>val</u>)</b>
+    Returns standard deviation for all entries in a list.
+
+ -  <b>sum(<u>val</u>)</b>
+    Returns sum of all entries in a list.
 
 
 ## Example 1
