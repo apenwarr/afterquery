@@ -2079,7 +2079,27 @@ var afterquery = (function() {
     var start = data.indexOf('jsonp(');
     if (start >= 0) {
       data = data.substr(start + 6, data.length - start - 6 - 2);
+	  data = data.trim();
     }
+
+	// Drop spurious trailing comma.
+	// Likely in programmatically generated data where a comma is
+	// appended to every record.
+	if(data[data.length-1] === ',') {
+		data = data.slice(0,-1);
+	}
+
+	// Ensure there is a "[" "]" wrapper around the whole thing.
+	// Likely in programmatically generated data where new data is
+	// regularly appended.  Maintaining the framing "[" "]" is a 
+	// nuisance, so it doesn't get done.
+	if(data.charAt(0) !== '[') {
+		console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+		console.log(data[0]);
+		data = data;
+		//data = "[" + data + "]";
+	}
+
     data = JSON.parse(data);
     success_func(data);
   }
