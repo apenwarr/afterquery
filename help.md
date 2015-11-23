@@ -209,6 +209,12 @@ Available transforms:
     values used to calculate the table body, so it is
     equivalent to an <b>&group=<u>rowkeys...</u>;</b>
     operation.
+
+ -  <b>&delta=<u>key1</u>,<u>key2</u></b>  
+    Replace entries for the named columns with the difference from the previous row.
+
+ -  <b>&unselect=<u>key1</u>,<u>key2</u></b>  
+    Remove the named columns.
  
  -  <b>&chart=<u>charttype</u></b>  
     Instead of showing a table of values, show a chart.  The
