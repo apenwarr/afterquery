@@ -2218,7 +2218,7 @@ AfterqueryObj.prototype.getUrlData = function(url, success_func, error_func) {
     var onError = function(xhr, msg) {
       that.console.debug('xhr returned error:', msg);
       that.console.debug('(trying jsonp instead)');
-      this.getUrlData_jsonp(url, success_func, error_func);
+      that.getUrlData_jsonp(url, success_func, error_func);
     };
     this.getUrlData_xhr(url, success_func, onError);
   };
