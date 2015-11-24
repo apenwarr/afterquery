@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Additional modifications 2015 by Alan De Smet, 
+ * Center for High Throughput Computing, University of Wisconsin - Madison.
+ * Licensed under the Apache License, Version 2.0.
+ */
 'use strict';
 
 var afterquery = (function() {
