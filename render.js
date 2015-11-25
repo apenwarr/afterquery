@@ -1492,19 +1492,26 @@ var afterquery = (function() {
 
     // Stub in space for new data.
     var newrow = new Array(a.headers.length);
+	for(i = 0; i < a.headers.length; i++) {
+		switch(a.types[i]) {
+		case T_NUM: newrow[i] = NaN; break;
+		case T_DATE: newrow[i] = new Date(1970,1,1,0,0,0); break;
+		case T_DATETIME: newrow[i] = new Date(1970,1,1,0,0,0); break;
+		case T_BOOL: newrow[i] = NaN; break;
+		case T_STRING: newrow[i] = ''; break;
+		default: newrow[i] = null;
+		}
+	}
     var newrows = new Array(b.data.length);
     for(row = 0; row < b.data.length; row++) {
       newrows[row] = newrow.slice(0);
     }
 
-    console.log("a:       ", a);
-    console.log(" .headers", a.headers);
-    console.log(" .types  ", a.types);
-    console.log(" .data   ", a.data);
-    console.log("b:       ", b);
-    console.log(" .headers", b.headers);
-    console.log(" .types  ", b.types);
-    console.log(" .data   ", b.data);
+/*
+  TODO TODO // TODO
+  Test jsonp
+  test mixed xhr/jsonp
+  */
 
     // Copy over data where we have a header and type match.
     for(b_colnum = 0; b_colnum < b.headers.length; b_colnum++) {
@@ -1524,7 +1531,7 @@ var afterquery = (function() {
     for(i = 0; i < b_new_cols.length; i++) {
       b_colnum = b_new_cols[i];
       out.headers.push(b.headers[b_colnum]);
-      out.types.push(b.headers[b_colnum]);
+      out.types.push(b.types[b_colnum]);
       for(row = 0; row < b.data.length; row++) {
         newrows[row].push( b.data[row][b_colnum]);
       }
@@ -2299,10 +2306,6 @@ var afterquery = (function() {
 
 
   function getUrlData(state, success_func, error_func) {
-    console.log("================================================================");
-    console.log("        todo:   ", state.todo);
-    console.log("        success:", state.success);
-    console.log("        failure:", state.failure);
     if(state.todo.length === 0) {
       // All URLs attempted
       if(state.rawdata.length > 0) {
