@@ -2360,7 +2360,7 @@ var afterquery = (function() {
       });
     } else {
       enqueue(queue, 'init data', function(_, done) {
-        done(startdata);
+        done([startdata]);
       });
     }
 
