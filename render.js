@@ -1509,8 +1509,8 @@ var afterquery = (function() {
 
 /*
   TODO TODO // TODO
-  Test jsonp
-  test mixed xhr/jsonp
+  TODO test mixed xhr/jsonp
+  TODO test-many.html
   */
 
     // Copy over data where we have a header and type match.
@@ -2181,7 +2181,8 @@ var afterquery = (function() {
           );
         },
       error: function(jqXHR, textStatus, errorThrown) {
-       getUrlDataFailure(textStatus, errorThrown, state, success_func, error_func);
+      console.debug("XHR failed:", textStatus, errorThrown);
+      error_func(state, success_func, getUrlDataFailure);
         }
       }
     );
@@ -2189,6 +2190,8 @@ var afterquery = (function() {
 
 
   function getUrlData_jsonp(state, success_func, error_func) {
+    var url = state.todo[0];
+
     var iframe = document.createElement('iframe');
     iframe.style.display = 'none';
 
