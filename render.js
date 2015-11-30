@@ -1492,16 +1492,16 @@ var afterquery = (function() {
 
     // Stub in space for new data.
     var newrow = new Array(a.headers.length);
-	for(i = 0; i < a.headers.length; i++) {
-		switch(a.types[i]) {
-		case T_NUM: newrow[i] = NaN; break;
-		case T_DATE: newrow[i] = new Date(1970,1,1,0,0,0); break;
-		case T_DATETIME: newrow[i] = new Date(1970,1,1,0,0,0); break;
-		case T_BOOL: newrow[i] = NaN; break;
-		case T_STRING: newrow[i] = ''; break;
-		default: newrow[i] = null;
-		}
-	}
+    for(i = 0; i < a.headers.length; i++) {
+      switch(a.types[i]) {
+      case T_NUM: newrow[i] = NaN; break;
+      case T_DATE: newrow[i] = new Date(1970,1,1,0,0,0); break;
+      case T_DATETIME: newrow[i] = new Date(1970,1,1,0,0,0); break;
+      case T_BOOL: newrow[i] = NaN; break;
+      case T_STRING: newrow[i] = ''; break;
+      default: newrow[i] = null;
+      }
+    }
     var newrows = new Array(b.data.length);
     for(row = 0; row < b.data.length; row++) {
       newrows[row] = newrow.slice(0);
