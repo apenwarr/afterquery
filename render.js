@@ -1507,12 +1507,6 @@ var afterquery = (function() {
       newrows[row] = newrow.slice(0);
     }
 
-/*
-  TODO TODO // TODO
-  TODO test mixed xhr/jsonp
-  TODO test-many.html
-  */
-
     // Copy over data where we have a header and type match.
     for(b_colnum = 0; b_colnum < b.headers.length; b_colnum++) {
       b_header =  b.headers[b_colnum];
