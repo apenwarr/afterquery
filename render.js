@@ -1306,11 +1306,18 @@ var afterquery = (function() {
       types: ingrid.types,
       headers: [],
     };
-    for(var i = 0; i < ingrid.headers.length; i++) {
+
+	var i;
+    var done = false;
+    for(i = 0; i < ingrid.headers.length; i++) {
       var header = ingrid.headers[i];
-      if(header === src) { header = dst; }
+      if((!done) && (header === src)) {
+        header = dst;
+        done = true;
+      }
       grid.headers.push(header);
     }
+
     console.debug('grid:', grid);
     return grid;
   };
