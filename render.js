@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Additional modifications 2015 by Alan De Smet, 
+ * Center for High Throughput Computing, University of Wisconsin - Madison.
+ * Licensed under the Apache License, Version 2.0.
+ */
 'use strict';
 
 var afterquery = (function() {
@@ -1291,6 +1296,31 @@ var afterquery = (function() {
     return grid;
   }
 
+  function doRename(ingrid, argval) {
+	console.debug('rename:', argval);
+    var parts = trySplitOne(argval, '=');
+    var src = parts[0];
+    var dst = parts[1];
+    var grid = {
+      data: ingrid.data,
+      types: ingrid.types,
+      headers: [],
+    };
+
+	var i;
+    var done = false;
+    for(i = 0; i < ingrid.headers.length; i++) {
+      var header = ingrid.headers[i];
+      if((!done) && (header === src)) {
+        header = dst;
+        done = true;
+      }
+      grid.headers.push(header);
+    }
+
+    console.debug('grid:', grid);
+    return grid;
+  };
 
   function yspread(grid) {
     for (var rowi in grid.data) {
@@ -1650,6 +1680,8 @@ var afterquery = (function() {
         transform(doExtractRegexp, argval);
       } else if (argkey == 'quantize') {
         transform(doQuantize, argval);
+      } else if (argkey == 'rename') {
+        transform(doRename, argval);
       } else if (argkey == 'yspread') {
         transform(doYSpread, argval);
       }
